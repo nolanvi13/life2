@@ -1,2 +1,3 @@
-// Content rendered by AppShell in layout — no server fetch needed
-export default function Budget() { return null; }
+"use client";
+// Content rendered by AppShell in layout — this page slot intentionally empty
+export default function Page() { return null; }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useSelectedLayoutSegment } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useLayoutEffect, useState } from "react";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { BudgetPage } from "@/components/budget/BudgetPage";
 import { CoursesPage } from "@/components/courses/CoursesPage";
@@ -11,24 +11,44 @@ import { CalendrierPage } from "@/components/calendrier/CalendrierPage";
 type Tab = "dashboard" | "budget" | "courses" | "recettes" | "calendrier";
 const TABS: Tab[] = ["dashboard", "budget", "courses", "recettes", "calendrier"];
 
+function pathnameToTab(pathname: string): Tab | null {
+  if (pathname === "/" || pathname.startsWith("/dashboard")) return "dashboard";
+  if (pathname.startsWith("/budget"))     return "budget";
+  if (pathname.startsWith("/courses"))    return "courses";
+  if (pathname.startsWith("/recettes"))   return "recettes";
+  if (pathname.startsWith("/calendrier")) return "calendrier";
+  return null; // /settings and any other non-tab page
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const segment = useSelectedLayoutSegment() as string | null;
-  const activeTab = (TABS.includes(segment as Tab) ? segment : "dashboard") as Tab;
-  const [everMounted, setEverMounted] = useState<Set<Tab>>(new Set([activeTab]));
+  const pathname = usePathname();
+  const activeTab = pathnameToTab(pathname);
 
-  useEffect(() => {
-    setEverMounted((prev) => new Set([...prev, activeTab]));
-  }, [activeTab]);
+  // Initialize with the first tab the user lands on
+  const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(() => {
+    const t = pathnameToTab(pathname);
+    return t ? new Set([t]) : new Set();
+  });
 
-  const isTab = TABS.includes(segment as Tab) || segment === null;
+  // useLayoutEffect: fires synchronously before paint → no blank flash on tab switch
+  useLayoutEffect(() => {
+    if (activeTab && !mountedTabs.has(activeTab)) {
+      setMountedTabs((prev) => new Set([...prev, activeTab]));
+    }
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Non-tab route (settings, etc.) — render page content normally
+  if (activeTab === null) {
+    return <>{children}</>;
+  }
 
   return (
     <>
       {TABS.map((tab) => {
-        const active = tab === activeTab;
-        if (!everMounted.has(tab)) return null;
+        // Only render once the tab has been visited
+        if (!mountedTabs.has(tab)) return null;
         return (
-          <div key={tab} style={{ display: active ? "block" : "none" }}>
+          <div key={tab} style={{ display: tab === activeTab ? "block" : "none" }}>
             {tab === "dashboard"  && <DashboardPage />}
             {tab === "budget"     && <BudgetPage />}
             {tab === "courses"    && <CoursesPage />}
@@ -37,7 +57,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         );
       })}
-      {!isTab && children}
     </>
   );
 }
