@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useApp } from "@/components/providers/AppProvider";
-import { useBudget } from "@/hooks/useBudget";
-import { useCalendrier } from "@/hooks/useCalendrier";
-import { calcBudget, fmt } from "@/lib/budget";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { fmt } from "@/lib/budget";
 import { IconWallet, IconChefHat, IconShoppingCart, IconCalendar, IconSettings } from "@tabler/icons-react";
 
 const MOIS = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
@@ -17,23 +16,14 @@ function todayLabel() {
 
 export function DashboardPage() {
   const { myName, partnerName, coupleId } = useApp();
-  const { nolan, lylou, commun, loading: budgetLoading } = useBudget(coupleId);
-  const { evenements, loading: eventsLoading } = useCalendrier(coupleId);
+  const { budget, nextEvent, loading } = useDashboardData(coupleId);
 
   const firstName = myName ?? "toi";
 
-  // Budget card data
-  const calc = calcBudget(nolan, lylou, commun);
-  const totalDepenses = calc.totalN + calc.totalL;
-  const totalRevenus = calc.salaireN + calc.salaireL;
-  const pctDepense = totalRevenus > 0 ? Math.min(100, Math.round((totalDepenses / totalRevenus) * 100)) : 0;
-  const totalCommun = calc.totalCommun;
-
-  // Next event
-  const today = new Date().toISOString().split("T")[0];
-  const nextEvent = evenements
-    .filter((e) => e.date >= today)
-    .sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
+  const totalDepenses = budget?.totalDepenses ?? 0;
+  const totalRevenus  = budget?.totalRevenus  ?? 0;
+  const totalCommun   = budget?.totalCommun   ?? 0;
+  const pctDepense    = totalRevenus > 0 ? Math.min(100, Math.round((totalDepenses / totalRevenus) * 100)) : 0;
 
   function formatEventDate(ymd: string) {
     const d = new Date(ymd + "T12:00:00");
@@ -105,10 +95,10 @@ export function DashboardPage() {
               Budget
             </span>
             <span style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
-              {budgetLoading ? "…" : `Commun · ${fmt(totalCommun)}`}
+              {loading ? "…" : `Commun · ${fmt(totalCommun)}`}
             </span>
           </div>
-          {!budgetLoading && totalRevenus > 0 && (
+          {!loading && totalRevenus > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--color-muted)", marginBottom: "6px", fontFamily: "var(--font-body)" }}>
@@ -215,7 +205,7 @@ export function DashboardPage() {
             </span>
           </div>
 
-          {!eventsLoading && nextEvent && (
+          {!loading && nextEvent && (
             <div style={{ display: "flex", alignItems: "center", gap: "14px", background: "rgba(255,255,255,0.55)", borderRadius: "10px", padding: "10px 14px" }}>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: "24px", fontWeight: 500, color: "var(--color-ink)", lineHeight: 1 }}>
