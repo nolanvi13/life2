@@ -39,7 +39,7 @@ export function RecetteModal({ recette, onClose, onDelete, onAddToCourses }: Pro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center" role="dialog" aria-modal="true">
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 

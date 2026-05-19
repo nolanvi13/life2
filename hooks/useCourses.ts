@@ -7,7 +7,7 @@ import type { ItemCourse } from "@/lib/recettes";
 export function useCourses(coupleId: string) {
   const [items, setItems] = useState<ItemCourse[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const load = useCallback(async () => {

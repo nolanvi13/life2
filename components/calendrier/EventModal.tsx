@@ -37,7 +37,7 @@ export function EventModal({ initial, onClose, onSave, onDelete }: Props) {
   const { bg, color } = CATEGORIE_COLORS[categorie];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full md:max-w-md md:rounded-3xl rounded-t-3xl animate-fade-up overflow-hidden"
         style={{ background: "var(--bg)", boxShadow: "0 25px 60px rgba(0,0,0,0.25)" }}>

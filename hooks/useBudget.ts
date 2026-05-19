@@ -24,7 +24,7 @@ export function useBudget(coupleId: string): UseBudgetReturn {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const idMap = useRef<Map<string, string>>(new Map());
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
   useEffect(() => {
     async function load() {

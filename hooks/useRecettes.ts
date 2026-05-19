@@ -7,7 +7,7 @@ import type { Recette, Ingredient } from "@/lib/recettes";
 export function useRecettes(coupleId: string) {
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const load = useCallback(async () => {

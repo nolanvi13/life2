@@ -31,7 +31,7 @@ export const CATEGORIES: EventCategorie[] = ["Rendez-vous", "Sortie", "Voyage", 
 export function useCalendrier(coupleId: string) {
   const [evenements, setEvenements] = useState<Evenement[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const load = useCallback(async () => {
