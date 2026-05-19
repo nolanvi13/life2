@@ -9,28 +9,58 @@ import {
   type BudgetOwner, type SectionDef,
 } from "@/lib/budget";
 import { useApp } from "@/components/providers/AppProvider";
+import { IconWallet } from "@tabler/icons-react";
 
 type Tab = "nolan" | "lylou" | "commun" | "synthese";
 
-function buildTabs(nolanName: string, lylouName: string) {
-  return [
-    { id: "nolan" as Tab,    label: nolanName, bg: "var(--pastel-yellow)", accent: "var(--nolan)" },
-    { id: "lylou" as Tab,    label: lylouName, bg: "var(--pastel-pink)",   accent: "var(--lylou)" },
-    { id: "commun" as Tab,   label: "Commun",  bg: "var(--pastel-green)",  accent: "var(--accent-green)" },
-    { id: "synthese" as Tab, label: "Synthèse",bg: "var(--pastel-purple)", accent: "var(--accent-purple)" },
-  ];
+const SECTION_LABEL_COLORS: Record<string, string> = {
+  revenus:      "var(--color-forest)",
+  obligatoire:  "#C4614A",
+  voiture:      "#E8A020",
+  abonnements:  "#7A60C0",
+  loisirs:      "#3D6B88",
+  épargne:      "var(--color-sage)",
+  logement:     "#C4614A",
+  alimentation: "var(--color-forest)",
+  divers:       "var(--color-muted)",
+};
+
+function getSectionColor(title: string): string {
+  const key = title.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  for (const [k, v] of Object.entries(SECTION_LABEL_COLORS)) {
+    if (key.includes(k)) return v;
+  }
+  return "var(--color-forest)";
 }
 
-function Section({ section, values, owner, accent, onUpdate }: {
+function Section({ section, values, owner, onUpdate }: {
   section: SectionDef;
   values: Record<string, number>;
   owner: BudgetOwner;
-  accent: string;
   onUpdate: (owner: BudgetOwner, category: string, key: string, val: number) => void;
 }) {
+  const labelColor = getSectionColor(section.title);
   return (
-    <div className="rounded-3xl p-4 space-y-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-      <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: accent, fontFamily: "var(--font-display)" }}>
+    <div
+      style={{
+        background: "#fff",
+        border: "0.5px solid var(--color-border)",
+        borderRadius: "14px",
+        padding: "20px 22px",
+        marginBottom: "14px",
+      }}
+    >
+      <h3
+        style={{
+          fontSize: "11px",
+          fontFamily: "var(--font-body)",
+          fontWeight: 500,
+          letterSpacing: "0.8px",
+          textTransform: "uppercase",
+          color: labelColor,
+          marginBottom: "16px",
+        }}
+      >
         {section.title}
       </h3>
       {section.fields.map((f) => (
@@ -38,7 +68,6 @@ function Section({ section, values, owner, accent, onUpdate }: {
           key={f.key}
           label={f.label}
           value={values[f.key] ?? 0}
-          accentColor={accent}
           onChange={(val) => onUpdate(owner, section.category, f.key, val)}
         />
       ))}
@@ -50,21 +79,26 @@ function SynthRow({ label, value, highlight, sub }: { label: string; value: numb
   return (
     <div
       className="flex items-center justify-between py-2"
-      style={{ borderBottom: "1px solid var(--border)" }}
+      style={{ borderBottom: "1px solid var(--color-border)" }}
     >
       <span
         className="text-sm"
         style={{
-          color: highlight ? "var(--text)" : sub ? "var(--text-xmuted)" : "var(--text-muted)",
-          fontWeight: highlight ? 700 : 400,
+          color: highlight ? "var(--color-ink)" : sub ? "var(--text-xmuted)" : "var(--color-muted)",
+          fontWeight: highlight ? 600 : 400,
           paddingLeft: sub ? "12px" : 0,
+          fontFamily: "var(--font-body)",
         }}
       >
         {label}
       </span>
       <span
-        className="text-sm font-semibold tabular-nums"
-        style={{ color: highlight ? "var(--accent-purple)" : "var(--text)", fontFamily: "var(--font-body)" }}
+        className="text-sm tabular-nums"
+        style={{
+          color: highlight ? "var(--color-forest)" : "var(--color-ink)",
+          fontFamily: "var(--font-display)",
+          fontWeight: highlight ? 500 : 400,
+        }}
       >
         {fmt(value)}
       </span>
@@ -82,34 +116,70 @@ export function BudgetPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</div>
+        <div className="text-sm" style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>Chargement…</div>
       </div>
     );
   }
 
-  const TABS = buildTabs(nolanName, lylouName);
-  const activeTab = TABS.find((t) => t.id === tab)!;
+  const TABS = [
+    { id: "nolan" as Tab,    label: nolanName },
+    { id: "lylou" as Tab,    label: lylouName },
+    { id: "commun" as Tab,   label: "Commun"  },
+    { id: "synthese" as Tab, label: "Synthèse" },
+  ];
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-32 md:pb-8">
+    <div className="max-w-lg mx-auto px-6 pt-9 pb-32 md:pb-10">
 
       {/* Header */}
-      <h1 className="text-2xl font-bold mb-5" style={{ fontFamily: "var(--font-display)", color: "var(--text)" }}>
-        Budget 💰
-      </h1>
+      <div className="flex items-center justify-between mb-7">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <IconWallet size={20} stroke={1.5} style={{ color: "var(--color-forest)" }} />
+          </div>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "34px",
+              fontWeight: 500,
+              color: "var(--color-ink)",
+              letterSpacing: "-0.8px",
+            }}
+          >
+            Budget
+          </h1>
+        </div>
+      </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 mb-5 p-1 rounded-2xl" style={{ background: "var(--surface-2)" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "4px",
+          padding: "4px",
+          background: "var(--color-cream)",
+          borderRadius: "12px",
+          marginBottom: "24px",
+          width: "fit-content",
+        }}
+      >
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className="flex-1 py-2 rounded-xl text-xs font-bold transition-all duration-200"
             style={{
-              fontFamily: "var(--font-display)",
-              background: tab === t.id ? t.bg : "transparent",
-              color: tab === t.id ? t.accent : "var(--text-muted)",
-              boxShadow: tab === t.id ? "var(--shadow-sm)" : "none",
+              padding: "7px 18px",
+              borderRadius: "9px",
+              fontSize: "13px",
+              fontFamily: "var(--font-body)",
+              background: tab === t.id ? "#fff" : "transparent",
+              color: tab === t.id ? "var(--color-ink)" : "var(--color-muted)",
+              fontWeight: tab === t.id ? 500 : 400,
+              border: "none",
+              cursor: "pointer",
+              boxShadow: tab === t.id ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              transition: "all 0.15s",
+              whiteSpace: "nowrap",
             }}
           >
             {t.label}
@@ -119,9 +189,9 @@ export function BudgetPage() {
 
       {/* Nolan tab */}
       {tab === "nolan" && (
-        <div className="space-y-3 animate-fade-up">
+        <div className="animate-fade-up">
           {PERSONAL_SECTIONS.map((s) => (
-            <Section key={s.category + s.title} section={s} values={nolan} owner="nolan" accent="var(--nolan)" onUpdate={updateField} />
+            <Section key={s.category + s.title} section={s} values={nolan} owner="nolan" onUpdate={updateField} />
           ))}
           <BudgetGauge
             reste={(nolan.salaire ?? 0) - calcBudget(nolan, {}, {}).depN}
@@ -133,9 +203,9 @@ export function BudgetPage() {
 
       {/* Lylou tab */}
       {tab === "lylou" && (
-        <div className="space-y-3 animate-fade-up">
+        <div className="animate-fade-up">
           {PERSONAL_SECTIONS.map((s) => (
-            <Section key={s.category + s.title} section={s} values={lylou} owner="lylou" accent="var(--lylou)" onUpdate={updateField} />
+            <Section key={s.category + s.title} section={s} values={lylou} owner="lylou" onUpdate={updateField} />
           ))}
           <BudgetGauge
             reste={(lylou.salaire ?? 0) - calcBudget({}, lylou, {}).depL}
@@ -147,17 +217,26 @@ export function BudgetPage() {
 
       {/* Commun tab */}
       {tab === "commun" && (
-        <div className="space-y-3 animate-fade-up">
+        <div className="animate-fade-up">
           {COMMUN_SECTIONS.map((s) => (
-            <Section key={s.category + s.title} section={s} values={commun} owner="commun" accent="var(--accent-green)" onUpdate={updateField} />
+            <Section key={s.category + s.title} section={s} values={commun} owner="commun" onUpdate={updateField} />
           ))}
-          <div className="rounded-3xl p-5" style={{ background: "var(--pastel-green)", border: "1px solid var(--border)" }}>
-            <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "var(--accent-green)" }}>Total commun</p>
-            <p className="text-3xl font-bold" style={{ fontFamily: "var(--font-display)", color: "var(--text)" }}>
+          <div
+            style={{
+              background: "var(--color-module-budget)",
+              border: "0.5px solid var(--color-border)",
+              borderRadius: "14px",
+              padding: "20px 22px",
+            }}
+          >
+            <p style={{ fontSize: "11px", fontFamily: "var(--font-body)", fontWeight: 500, letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--color-forest)", marginBottom: "10px" }}>
+              Total commun
+            </p>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: "32px", fontWeight: 500, color: "var(--color-ink)" }}>
               {fmt(calc.totalCommun)}
             </p>
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-              soit <span className="font-bold" style={{ color: "var(--text)" }}>{fmt(calc.partCommun)}</span> chacun
+            <p style={{ fontSize: "13px", color: "var(--color-muted)", marginTop: "4px", fontFamily: "var(--font-body)" }}>
+              soit <strong style={{ color: "var(--color-ink-soft)", fontWeight: 500 }}>{fmt(calc.partCommun)}</strong> chacun
             </p>
           </div>
         </div>
@@ -166,17 +245,15 @@ export function BudgetPage() {
       {/* Synthèse tab */}
       {tab === "synthese" && (
         <div className="space-y-4 animate-fade-up">
-          {/* Gauges */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <BudgetGauge reste={calc.resteN} salaire={calc.salaireN} label={`Reste — ${nolanName}`} />
             <BudgetGauge reste={calc.resteL} salaire={calc.salaireL} label={`Reste — ${lylouName}`} />
           </div>
 
-          {/* Breakdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Nolan */}
-            <div className="rounded-3xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--nolan)" }}>
+            <div style={{ background: "#fff", border: "0.5px solid var(--color-border)", borderRadius: "14px", padding: "20px 22px" }}>
+              <h3 style={{ fontSize: "11px", fontFamily: "var(--font-body)", fontWeight: 500, letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--color-forest)", marginBottom: "12px" }}>
                 {nolanName}
               </h3>
               <SynthRow label="Salaire net" value={calc.salaireN} />
@@ -192,8 +269,8 @@ export function BudgetPage() {
             </div>
 
             {/* Lylou */}
-            <div className="rounded-3xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: "var(--lylou)" }}>
+            <div style={{ background: "#fff", border: "0.5px solid var(--color-border)", borderRadius: "14px", padding: "20px 22px" }}>
+              <h3 style={{ fontSize: "11px", fontFamily: "var(--font-body)", fontWeight: 500, letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--color-sage)", marginBottom: "12px" }}>
                 {lylouName}
               </h3>
               <SynthRow label="Salaire net" value={calc.salaireL} />
@@ -209,20 +286,20 @@ export function BudgetPage() {
             </div>
           </div>
 
-          {/* Stats couple */}
-          <div className="rounded-3xl p-5" style={{ background: "var(--pastel-purple)", border: "1px solid var(--border)" }}>
-            <h3 className="text-xs font-bold uppercase tracking-wide mb-4" style={{ color: "var(--accent-purple)" }}>
+          {/* Vue couple */}
+          <div style={{ background: "var(--color-module-budget)", border: "0.5px solid var(--color-border)", borderRadius: "14px", padding: "20px 22px" }}>
+            <h3 style={{ fontSize: "11px", fontFamily: "var(--font-body)", fontWeight: 500, letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--color-forest)", marginBottom: "16px" }}>
               Vue couple
             </h3>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: "Revenus combinés", value: calc.salaireN + calc.salaireL },
                 { label: "Dépenses totales", value: calc.totalN + calc.totalL },
-                { label: "Reste combiné", value: calc.resteN + calc.resteL },
+                { label: "Reste combiné",    value: calc.resteN + calc.resteL },
               ].map(({ label, value }) => (
                 <div key={label} className="text-center">
-                  <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{label}</p>
-                  <p className="text-base font-bold tabular-nums" style={{ fontFamily: "var(--font-display)", color: "var(--text)" }}>
+                  <p style={{ fontSize: "11px", color: "var(--color-muted)", marginBottom: "4px", fontFamily: "var(--font-body)" }}>{label}</p>
+                  <p style={{ fontFamily: "var(--font-display)", fontSize: "18px", fontWeight: 500, color: "var(--color-ink)" }}>
                     {fmt(value)}
                   </p>
                 </div>
@@ -232,8 +309,8 @@ export function BudgetPage() {
         </div>
       )}
 
-      <p className="text-xs text-center mt-6" style={{ color: "var(--text-xmuted)" }}>
-        Sauvegarde automatique · Données partagées avec ton couple
+      <p style={{ fontSize: "12px", textAlign: "center", marginTop: "24px", color: "var(--text-xmuted)", fontFamily: "var(--font-body)" }}>
+        Sauvegarde automatique · Données partagées
       </p>
     </div>
   );

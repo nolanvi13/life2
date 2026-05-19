@@ -1,77 +1,97 @@
 @import "tailwindcss";
 
 :root {
-  /* Base */
-  --bg: #FAFAF8;
-  --surface: #FFFFFF;
-  --surface-2: #F4F1FF;
-  --surface-3: #EDEAFF;
+  /* ── Backgrounds ── */
+  --bg:        #FDFAF5;
+  --surface:   #FFFFFF;
+  --surface-2: #F7F3EC;   /* cream */
+  --surface-3: #EBF0E8;   /* sage clair */
 
-  /* Pastels — vrais fonds de surface */
-  --pastel-purple: #E8E1FF;
-  --pastel-green:  #CCEFDB;
-  --pastel-peach:  #FFE4CC;
-  --pastel-blue:   #CCE6FF;
-  --pastel-pink:   #FFD6E8;
-  --pastel-yellow: #FFF0B8;
+  /* ── Forest — couleur principale ── */
+  --color-forest:       #2C4A35;
+  --color-forest-light: #3D6B4A;
+  --color-forest-muted: rgba(44, 74, 53, 0.08);
 
-  /* Accents */
-  --accent-purple: #6B46FC;
-  --accent-green:  #16A34A;
-  --accent-peach:  #EA6C00;
-  --accent-blue:   #0078D4;
+  /* ── Butter ── */
+  --color-butter:    #E8C84A;
+  --color-butter-bg: #F5E49A;
 
-  /* Identité couple */
-  --nolan:  #FFC83D;
-  --lylou:  #FF7EB3;
+  /* ── Sage ── */
+  --color-sage: #8FAF7E;
 
-  /* Text */
-  --text:       #17131F;
-  --text-2:     #3D3452;
-  --text-muted: #6B6080;
-  --text-xmuted:#9E98B0;
+  /* ── Module backgrounds ── */
+  --color-module-budget:    #EBF0E8;
+  --color-module-recettes:  #F0EBE4;
+  --color-module-courses:   #E4EBF0;
+  --color-module-calendar:  #EEE4F0;
+  --color-cream:            #F7F3EC;
 
-  /* Borders */
-  --border:     #E4DFEF;
-  --border-2:   #D4CDE8;
+  /* ── Backwards-compat pastels → mapped to new module colors ── */
+  --pastel-purple: #EEE4F0;
+  --pastel-green:  #EBF0E8;
+  --pastel-peach:  #F0EBE4;
+  --pastel-blue:   #E4EBF0;
+  --pastel-pink:   #EEE4F0;
+  --pastel-yellow: #F5E49A;
 
-  /* Radius */
-  --radius:     24px;
-  --radius-sm:  14px;
-  --radius-xs:  10px;
-  --radius-full:9999px;
+  /* ── Accents — forest replaces purple everywhere ── */
+  --accent-purple: #2C4A35;
+  --accent-green:  #2C4A35;
+  --accent-peach:  #C4614A;
+  --accent-blue:   #3D6B4A;
 
-  /* Elevation */
-  --shadow-sm:   0 1px 3px rgba(107,70,252,0.06), 0 0 1px rgba(0,0,0,0.04);
-  --shadow-md:   0 4px 16px rgba(107,70,252,0.10), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-lg:   0 12px 36px rgba(107,70,252,0.14), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-hover:0 8px 28px rgba(107,70,252,0.18);
+  /* ── Couple identity ── */
+  --nolan: #E8C84A;
+  --lylou: #8FAF7E;
 
-  /* Fonts */
-  --font-display: 'Outfit', sans-serif;
-  --font-body:    'Plus Jakarta Sans', sans-serif;
+  /* ── Texte ── */
+  --color-ink:      #1E2820;
+  --color-ink-soft: #3A4A3E;
+  --color-muted:    #7A8A7E;
+  --text:           #1E2820;
+  --text-2:         #3A4A3E;
+  --text-muted:     #7A8A7E;
+  --text-xmuted:    #9AAA9E;
 
-  /* shadcn compat */
-  --background:           #FAFAF8;
-  --foreground:           #17131F;
+  /* ── Bordures ── */
+  --color-border:  rgba(44, 74, 53, 0.12);
+  --border:        rgba(44, 74, 53, 0.12);
+  --border-2:      rgba(44, 74, 53, 0.22);
+
+  /* ── Radius ── */
+  --radius:      16px;
+  --radius-sm:   12px;
+  --radius-xs:   10px;
+  --radius-full: 9999px;
+
+  /* ── Elevation ── */
+  --shadow-sm:   0 1px 3px rgba(44,74,53,0.08), 0 0 1px rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 16px rgba(44,74,53,0.10), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg:   0 12px 36px rgba(44,74,53,0.14), 0 2px 4px rgba(0,0,0,0.04);
+
+  /* ── Polices ── */
+  --font-display: 'Fraunces', serif;
+  --font-body:    'Instrument Sans', sans-serif;
+
+  /* ── shadcn compat ── */
+  --background:           #FDFAF5;
+  --foreground:           #1E2820;
   --card:                 #FFFFFF;
-  --card-foreground:      #17131F;
+  --card-foreground:      #1E2820;
   --popover:              #FFFFFF;
-  --popover-foreground:   #17131F;
-  --primary:              #6B46FC;
+  --popover-foreground:   #1E2820;
+  --primary:              #2C4A35;
   --primary-foreground:   #FFFFFF;
-  --secondary:            #F4F1FF;
-  --secondary-foreground: #17131F;
-  --muted:                #F4F1FF;
-  --muted-foreground:     #6B6080;
-  --accent:               #E8E1FF;
-  --accent-foreground:    #17131F;
-  --destructive:          #DC2626;
-  --destructive-foreground:#FFFFFF;
-  --border:               #E4DFEF;
-  --input:                #E4DFEF;
-  --ring:                 #6B46FC;
-  --radius:               24px;
+  --secondary:            #F7F3EC;
+  --secondary-foreground: #1E2820;
+  --muted:                #F7F3EC;
+  --muted-foreground:     #7A8A7E;
+  --accent:               #EBF0E8;
+  --accent-foreground:    #1E2820;
+  --destructive:          #C4614A;
+  --destructive-foreground: #FFFFFF;
+  --input:                rgba(44, 74, 53, 0.12);
+  --ring:                 #2C4A35;
 }
 
 @theme inline {
@@ -100,25 +120,34 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 500;
 }
 
-/* Utility: tile entrance animation */
+/* ── Animations ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-.animate-fade-up {
-  animation: fadeUp 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
+.animate-fade-up   { animation: fadeUp 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 .animate-fade-up-1 { animation-delay:  40ms; }
 .animate-fade-up-2 { animation-delay:  80ms; }
 .animate-fade-up-3 { animation-delay: 120ms; }
 .animate-fade-up-4 { animation-delay: 160ms; }
 
-/* ── Anti-zoom iOS : tous les inputs doivent faire ≥16px ── */
+/* ── Nav active indicator ── */
+.nav-active-bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--color-butter);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Anti-zoom iOS ── */
 input, textarea, select {
   font-size: 16px !important;
 }

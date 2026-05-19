@@ -18,12 +18,12 @@ export interface Evenement {
 }
 
 export const CATEGORIE_COLORS: Record<EventCategorie, { bg: string; color: string; pastel: string }> = {
-  "Rendez-vous": { bg: "var(--pastel-blue)",   color: "#1A5FA8", pastel: "var(--pastel-blue)" },
-  "Sortie":      { bg: "var(--pastel-yellow)", color: "#8B6914", pastel: "var(--pastel-yellow)" },
-  "Voyage":      { bg: "var(--pastel-peach)",  color: "#C2600A", pastel: "var(--pastel-peach)" },
-  "Famille":     { bg: "var(--pastel-pink)",   color: "#BE185D", pastel: "var(--pastel-pink)" },
-  "Santé":       { bg: "var(--pastel-green)",  color: "#15803D", pastel: "var(--pastel-green)" },
-  "Autre":       { bg: "var(--surface-2)",     color: "var(--text-muted)", pastel: "var(--surface-2)" },
+  "Rendez-vous": { bg: "#E4EBF0", color: "#3D6B88", pastel: "#E4EBF0" },
+  "Sortie":      { bg: "#F5E9DC", color: "#C4614A", pastel: "#F5E9DC" },
+  "Voyage":      { bg: "#EBF0E8", color: "#2C4A35", pastel: "#EBF0E8" },
+  "Famille":     { bg: "#EEE4F0", color: "#7A60A0", pastel: "#EEE4F0" },
+  "Santé":       { bg: "#E4F0EA", color: "#2D6B45", pastel: "#E4F0EA" },
+  "Autre":       { bg: "#F7F3EC", color: "#7A8A7E", pastel: "#F7F3EC" },
 };
 
 export const CATEGORIES: EventCategorie[] = ["Rendez-vous", "Sortie", "Voyage", "Famille", "Santé", "Autre"];

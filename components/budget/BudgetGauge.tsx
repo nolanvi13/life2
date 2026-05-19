@@ -11,34 +11,71 @@ export function BudgetGauge({ reste, salaire, label }: Props) {
   const isNegative = reste < 0;
 
   return (
-    <div className="rounded-3xl p-5" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+    <div
+      style={{
+        background: "#fff",
+        border: "0.5px solid var(--color-border)",
+        borderRadius: "14px",
+        padding: "20px 22px",
+        marginBottom: "14px",
+      }}
+    >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+        <span
+          style={{
+            fontSize: "11px",
+            fontFamily: "var(--font-body)",
+            fontWeight: 500,
+            letterSpacing: "0.8px",
+            textTransform: "uppercase",
+            color: "var(--color-muted)",
+          }}
+        >
           {label}
         </span>
         <span
-          className="text-xs font-bold px-2.5 py-1 rounded-full"
-          style={{ background: `${color}20`, color }}
+          style={{
+            fontSize: "11px",
+            fontWeight: 500,
+            padding: "3px 10px",
+            borderRadius: "20px",
+            background: `${color}20`,
+            color,
+            fontFamily: "var(--font-body)",
+          }}
         >
           {statusLabel}
         </span>
       </div>
 
       <div
-        className="text-3xl font-bold mb-1"
-        style={{ fontFamily: "var(--font-display)", color: isNegative ? "#EF4444" : "var(--text)" }}
+        style={{
+          fontFamily: "var(--font-display)",
+          fontSize: "30px",
+          fontWeight: 500,
+          color: isNegative ? "#C4614A" : "var(--color-ink)",
+          marginBottom: "4px",
+          letterSpacing: "-0.5px",
+        }}
       >
         {fmt(reste)}
-        <span className="text-sm font-normal ml-1" style={{ color: "var(--text-muted)" }}>/mois</span>
+        <span style={{ fontSize: "14px", fontWeight: 400, marginLeft: "6px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
+          /mois
+        </span>
       </div>
 
-      <div className="h-1.5 rounded-full overflow-hidden mt-3" style={{ background: "var(--border)" }}>
+      <div style={{ height: "6px", borderRadius: "3px", overflow: "hidden", background: "var(--color-border)", marginTop: "12px" }}>
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct.toFixed(1)}%`, background: color }}
+          style={{
+            width: `${pct.toFixed(1)}%`,
+            height: "100%",
+            borderRadius: "3px",
+            background: color,
+            transition: "width 0.5s",
+          }}
         />
       </div>
-      <p className="text-xs mt-1.5" style={{ color: "var(--text-xmuted)" }}>
+      <p style={{ fontSize: "12px", marginTop: "6px", color: "var(--text-xmuted)", fontFamily: "var(--font-body)" }}>
         {pct.toFixed(0)}% du salaire net
       </p>
     </div>

@@ -61,35 +61,59 @@ export function RecettesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</div>
+        <div className="text-sm" style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>Chargement…</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-32 md:pb-8">
+    <div className="max-w-lg mx-auto px-6 pt-9 pb-32 md:pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)", color: "var(--text)" }}>
-          Recettes 🍽️
+      <div className="flex items-center justify-between mb-7">
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "34px",
+            fontWeight: 500,
+            color: "var(--color-ink)",
+            letterSpacing: "-0.8px",
+          }}
+        >
+          Recettes
         </h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150"
-          style={{ background: "var(--pastel-green)", color: "var(--accent-green)" }}
+          style={{
+            background: "var(--color-forest)",
+            color: "#fff",
+            border: "none",
+            borderRadius: "10px",
+            padding: "9px 16px",
+            fontFamily: "var(--font-body)",
+            fontSize: "13px",
+            fontWeight: 500,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
         >
-          <span>+</span>
-          <span>Ajouter</span>
+          + Ajouter
         </button>
       </div>
 
       {/* Cette semaine strip */}
       {weekRecettes.length > 0 && (
         <div
-          className="rounded-2xl p-3 mb-5 overflow-x-auto"
-          style={{ background: "var(--pastel-green)", border: "1px solid var(--border)" }}
+          className="mb-5 overflow-x-auto scrollbar-none"
+          style={{
+            background: "var(--color-module-budget)",
+            borderRadius: "12px",
+            padding: "12px 16px",
+            border: "0.5px solid var(--color-border)",
+          }}
         >
-          <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "var(--accent-green)" }}>
+          <p style={{ fontSize: "11px", fontFamily: "var(--font-body)", fontWeight: 500, letterSpacing: "0.8px", textTransform: "uppercase", color: "var(--color-forest)", marginBottom: "8px" }}>
             Cette semaine
           </p>
           <div className="flex gap-2">
@@ -97,11 +121,24 @@ export function RecettesPage() {
               <button
                 key={r.id}
                 onClick={() => setOpenRecette(r)}
-                className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium"
-                style={{ background: "white", color: "var(--text)", border: "1px solid var(--border)" }}
+                style={{
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  background: "#fff",
+                  color: "var(--color-ink)",
+                  border: "0.5px solid var(--color-border)",
+                  cursor: "pointer",
+                  fontFamily: "var(--font-body)",
+                }}
               >
                 <span>{r.emoji}</span>
-                <span style={{ fontFamily: "var(--font-display)" }}>{r.title}</span>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: "14px" }}>{r.title}</span>
               </button>
             ))}
           </div>
@@ -109,15 +146,23 @@ export function RecettesPage() {
       )}
 
       {/* Category filters */}
-      <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex gap-1.5 mb-6 overflow-x-auto pb-1 scrollbar-none">
         {filters.map((f) => (
           <button
             key={f}
             onClick={() => setSelectedFilter(f)}
-            className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150"
             style={{
-              background: selectedFilter === f ? "var(--accent-green)" : "var(--surface-2)",
-              color: selectedFilter === f ? "white" : "var(--text-muted)",
+              flexShrink: 0,
+              padding: "6px 14px",
+              borderRadius: "20px",
+              fontSize: "13px",
+              fontFamily: "var(--font-body)",
+              border: `1px solid ${selectedFilter === f ? "var(--color-forest)" : "var(--color-border)"}`,
+              background: selectedFilter === f ? "var(--color-forest)" : "transparent",
+              color: selectedFilter === f ? "#fff" : "var(--color-ink-soft)",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              transition: "all 0.15s",
             }}
           >
             {f}
@@ -129,16 +174,24 @@ export function RecettesPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-4xl mb-3">🍽️</p>
-          <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
-            {recettes.length === 0
-              ? "Aucune recette pour l'instant"
-              : "Aucune recette dans cette catégorie"}
+          <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
+            {recettes.length === 0 ? "Aucune recette pour l'instant" : "Aucune recette dans cette catégorie"}
           </p>
           {recettes.length === 0 && (
             <button
               onClick={() => setShowAdd(true)}
-              className="mt-4 px-4 py-2 rounded-xl text-sm font-bold"
-              style={{ background: "var(--pastel-green)", color: "var(--accent-green)" }}
+              style={{
+                marginTop: "16px",
+                padding: "9px 18px",
+                borderRadius: "10px",
+                fontSize: "13px",
+                fontWeight: 500,
+                background: "var(--color-forest)",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+              }}
             >
               Ajouter la première
             </button>

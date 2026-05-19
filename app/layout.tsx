@@ -1,17 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 
-const outfit = Outfit({
+const fraunces = Fraunces({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
+  style: ["normal", "italic"],
+  weight: ["300", "500", "600"],
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
+const instrumentSans = Instrument_Sans({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -21,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FAFAF8",
+  themeColor: "#FDFAF5",
 };
 
 export default function RootLayout({
@@ -30,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${outfit.variable} ${plusJakarta.variable} h-full`}>
+    <html lang="fr" className={`${fraunces.variable} ${instrumentSans.variable} h-full`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

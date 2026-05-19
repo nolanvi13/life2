@@ -15,9 +15,9 @@ interface EditState {
 }
 
 const inputStyle = {
-  background: "var(--bg)",
-  border: "1.5px solid var(--accent-green)",
-  color: "var(--text)",
+  background: "#fff",
+  border: "1px solid var(--color-border)",
+  color: "var(--color-ink)",
   outline: "none",
 };
 
@@ -34,19 +34,33 @@ interface ItemRowProps {
   onEditChange: (patch: Partial<EditState>) => void;
 }
 
-function ItemRow({ item, idx, total, editing, onToggleCheck, onDelete, onStartEdit, onSaveEdit, onCancelEdit, onEditChange }: ItemRowProps) {
+function ItemRow({ item, editing, onToggleCheck, onDelete, onStartEdit, onSaveEdit, onCancelEdit, onEditChange }: ItemRowProps) {
   const isEditing = editing?.id === item.id;
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-2.5 group"
-      style={{ borderBottom: idx < total - 1 ? "1px solid var(--border)" : "none" }}
+      className="flex items-center gap-3 group"
+      style={{
+        padding: "12px 16px",
+        background: "#fff",
+        border: "0.5px solid var(--color-border)",
+        borderRadius: "10px",
+        transition: "opacity 0.15s",
+      }}
     >
       {/* Checkbox */}
       <button
         onClick={() => { onCancelEdit(); onToggleCheck(item.id, true); }}
-        className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all duration-150"
-        style={{ borderColor: "var(--border)" }}
+        style={{
+          flexShrink: 0,
+          width: "18px",
+          height: "18px",
+          borderRadius: "50%",
+          border: "1.5px solid var(--color-border)",
+          cursor: "pointer",
+          background: "transparent",
+          transition: "all 0.15s",
+        }}
         aria-label="Cocher"
       />
 
@@ -61,7 +75,7 @@ function ItemRow({ item, idx, total, editing, onToggleCheck, onDelete, onStartEd
               onChange={(e) => onEditChange({ name: e.target.value })}
               onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit(); if (e.key === "Escape") onCancelEdit(); }}
               className="flex-1 h-8 px-2.5 rounded-xl text-sm min-w-0"
-              style={inputStyle}
+              style={{ ...inputStyle, borderRadius: "8px", padding: "0 10px" }}
             />
             <input
               value={editing.quantity}
@@ -69,7 +83,7 @@ function ItemRow({ item, idx, total, editing, onToggleCheck, onDelete, onStartEd
               onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit(); if (e.key === "Escape") onCancelEdit(); }}
               placeholder="Qté"
               className="w-14 h-8 px-2 rounded-xl text-sm text-center"
-              style={inputStyle}
+              style={{ ...inputStyle, borderRadius: "8px" }}
             />
             <input
               value={editing.unit}
@@ -77,7 +91,7 @@ function ItemRow({ item, idx, total, editing, onToggleCheck, onDelete, onStartEd
               onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit(); if (e.key === "Escape") onCancelEdit(); }}
               placeholder="g/ml…"
               className="w-14 h-8 px-2 rounded-xl text-sm"
-              style={inputStyle}
+              style={{ ...inputStyle, borderRadius: "8px" }}
             />
             <button
               onClick={onSaveEdit}
@@ -195,28 +209,58 @@ export function CoursesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</div>
+        <div className="text-sm" style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>Chargement…</div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-32 md:pb-8">
+    <div className="max-w-lg mx-auto px-6 pt-9 pb-32 md:pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)", color: "var(--text)" }}>
-          Courses 🛒
+      <div className="flex items-center justify-between mb-7">
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "34px",
+            fontWeight: 500,
+            color: "var(--color-ink)",
+            letterSpacing: "-0.8px",
+          }}
+        >
+          Courses
         </h1>
         {items.length > 0 && (
           <div className="flex gap-2">
             {checked.length > 0 && (
-              <button onClick={clearChecked} className="px-3 py-1.5 rounded-xl text-xs font-bold"
-                style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>
+              <button
+                onClick={clearChecked}
+                style={{
+                  padding: "9px 14px",
+                  borderRadius: "10px",
+                  fontSize: "13px",
+                  fontFamily: "var(--font-body)",
+                  background: "transparent",
+                  color: "var(--color-muted)",
+                  border: "1px solid var(--color-border)",
+                  cursor: "pointer",
+                }}
+              >
                 Supprimer ✓
               </button>
             )}
-            <button onClick={clearAll} className="px-3 py-1.5 rounded-xl text-xs font-bold"
-              style={{ background: "#FEE2E2", color: "#B91C1C" }}>
+            <button
+              onClick={clearAll}
+              style={{
+                padding: "9px 14px",
+                borderRadius: "10px",
+                fontSize: "13px",
+                fontFamily: "var(--font-body)",
+                background: "transparent",
+                color: "#C4614A",
+                border: "1px solid rgba(196,97,74,0.3)",
+                cursor: "pointer",
+              }}
+            >
               Tout vider
             </button>
           </div>
@@ -225,14 +269,46 @@ export function CoursesPage() {
 
       {/* Add item form */}
       <form onSubmit={handleAdd} className="flex gap-2 mb-6">
-        <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)}
+        <input
+          type="text"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
           placeholder="Ajouter un article…"
-          className="flex-1 h-11 px-3 rounded-2xl text-sm outline-none"
-          style={{ background: "var(--surface-2)", border: "1.5px solid var(--border)", color: "var(--text)" }}
+          style={{
+            flex: 1,
+            height: "44px",
+            padding: "0 16px",
+            borderRadius: "12px",
+            border: "1px solid var(--color-border)",
+            fontFamily: "var(--font-body)",
+            fontSize: "14px",
+            color: "var(--color-ink)",
+            background: "#fff",
+            outline: "none",
+            transition: "border-color 0.15s",
+          }}
+          onFocus={(e) => (e.target.style.borderColor = "var(--color-forest)")}
+          onBlur={(e) => (e.target.style.borderColor = "var(--color-border)")}
         />
-        <button type="submit" disabled={!newName.trim() || adding}
-          className="h-11 px-4 rounded-2xl text-sm font-bold transition-all disabled:opacity-40"
-          style={{ background: "var(--pastel-green)", color: "var(--accent-green)" }}>
+        <button
+          type="submit"
+          disabled={!newName.trim() || adding}
+          style={{
+            width: "44px",
+            height: "44px",
+            background: "var(--color-forest)",
+            border: "none",
+            borderRadius: "10px",
+            color: "#fff",
+            fontSize: "20px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: !newName.trim() || adding ? 0.4 : 1,
+            transition: "opacity 0.15s",
+          }}
+        >
           +
         </button>
       </form>
@@ -241,23 +317,31 @@ export function CoursesPage() {
       {items.length === 0 && (
         <div className="text-center py-16">
           <p className="text-4xl mb-3">🛒</p>
-          <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>La liste est vide</p>
-          <p className="text-xs mt-1" style={{ color: "var(--text-xmuted)" }}>Ajoute des articles ou importe depuis une recette</p>
+          <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>La liste est vide</p>
+          <p style={{ fontSize: "12px", marginTop: "4px", color: "var(--text-xmuted)", fontFamily: "var(--font-body)" }}>Ajoute des articles ou importe depuis une recette</p>
         </div>
       )}
 
       {/* Unchecked items grouped by category */}
       {activeCategories.map((cat) => (
-        <section key={cat} className="mb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base">{CATEGORY_ICONS[cat] ?? "🛍️"}</span>
-            <h2 className="text-xs font-bold uppercase tracking-wider"
-              style={{ color: "var(--text-muted)", fontFamily: "var(--font-display)" }}>
+        <section key={cat}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", margin: "20px 0 8px" }}>
+            <span style={{ fontSize: "14px" }}>{CATEGORY_ICONS[cat] ?? "🛍️"}</span>
+            <h2
+              style={{
+                fontSize: "11px",
+                fontFamily: "var(--font-body)",
+                fontWeight: 500,
+                letterSpacing: "0.8px",
+                textTransform: "uppercase",
+                color: "var(--color-muted)",
+              }}
+            >
               {cat}
             </h2>
-            <span className="text-xs" style={{ color: "var(--text-xmuted)" }}>({grouped[cat].length})</span>
+            <span style={{ fontSize: "11px", color: "var(--text-xmuted)", fontFamily: "var(--font-body)" }}>({grouped[cat].length})</span>
           </div>
-          <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {grouped[cat].map((item, idx) => (
               <ItemRow
                 key={item.id}
@@ -279,30 +363,59 @@ export function CoursesPage() {
 
       {/* Checked items */}
       {checked.length > 0 && (
-        <section className="mt-6">
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider"
-              style={{ color: "var(--text-xmuted)", fontFamily: "var(--font-display)" }}>
+        <section style={{ marginTop: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", margin: "0 0 8px" }}>
+            <h2
+              style={{
+                fontSize: "11px",
+                fontFamily: "var(--font-body)",
+                fontWeight: 500,
+                letterSpacing: "0.8px",
+                textTransform: "uppercase",
+                color: "var(--text-xmuted)",
+              }}
+            >
               Dans le panier ({checked.length})
             </h2>
           </div>
-          <div className="rounded-2xl overflow-hidden opacity-60"
-            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-            {checked.map((item, idx) => (
-              <div key={item.id} className="flex items-center gap-3 px-4 py-3 group"
-                style={{ borderBottom: idx < checked.length - 1 ? "1px solid var(--border)" : "none" }}>
-                <button onClick={() => toggleCheck(item.id, false)}
-                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ background: "var(--accent-green)", border: "2px solid var(--accent-green)" }}
-                  aria-label="Décocher">
+          <div style={{ opacity: 0.5, display: "flex", flexDirection: "column", gap: "6px" }}>
+            {checked.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 group"
+                style={{
+                  padding: "12px 16px",
+                  background: "#fff",
+                  border: "0.5px solid var(--color-border)",
+                  borderRadius: "10px",
+                }}
+              >
+                <button
+                  onClick={() => toggleCheck(item.id, false)}
+                  style={{
+                    flexShrink: 0,
+                    width: "18px",
+                    height: "18px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "var(--color-forest)",
+                    border: "2px solid var(--color-forest)",
+                    cursor: "pointer",
+                  }}
+                  aria-label="Décocher"
+                >
                   <svg width="9" height="7" viewBox="0 0 11 9" fill="none">
                     <path d="M1 4l3.5 3.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
-                <span className="flex-1 text-sm line-through" style={{ color: "var(--text-muted)" }}>{item.name}</span>
-                <button onClick={() => deleteItem(item.id)}
+                <span className="flex-1 text-sm line-through" style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>{item.name}</span>
+                <button
+                  onClick={() => deleteItem(item.id)}
                   className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full"
-                  style={{ color: "var(--text-xmuted)" }}>
+                  style={{ color: "var(--text-xmuted)", cursor: "pointer" }}
+                >
                   <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -313,7 +426,7 @@ export function CoursesPage() {
         </section>
       )}
 
-      <p className="text-xs text-center mt-6" style={{ color: "var(--text-xmuted)" }}>
+      <p style={{ fontSize: "12px", textAlign: "center", marginTop: "24px", color: "var(--text-xmuted)", fontFamily: "var(--font-body)" }}>
         Liste partagée en temps réel avec ton couple
       </p>
     </div>

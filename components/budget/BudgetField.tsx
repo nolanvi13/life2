@@ -6,10 +6,9 @@ type Props = {
   label: string;
   value: number;
   onChange: (val: number) => void;
-  accentColor: string;
 };
 
-export function BudgetField({ label, value, onChange, accentColor }: Props) {
+export function BudgetField({ label, value, onChange }: Props) {
   const [focused, setFocused] = useState(false);
   const [raw, setRaw] = useState("");
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,20 +43,43 @@ export function BudgetField({ label, value, onChange, accentColor }: Props) {
     : value === 0 ? "" : new Intl.NumberFormat("fr-CH").format(value);
 
   return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-xmuted)" }}>
-        {label}
-      </span>
+    <div style={{ marginBottom: "8px" }}>
       <div
-        className="flex items-center gap-2 h-11 px-3 rounded-2xl transition-all duration-150"
         style={{
-          background: "var(--bg)",
-          border: `1.5px solid ${focused ? accentColor : "var(--border)"}`,
-          boxShadow: focused ? `0 0 0 3px ${accentColor}18` : "none",
+          display: "flex",
+          alignItems: "center",
+          border: `0.5px solid ${focused ? "var(--color-forest)" : "var(--color-border)"}`,
+          borderRadius: "10px",
+          padding: "10px 14px",
+          transition: "border-color 0.15s",
+          background: "#fff",
+          cursor: "text",
         }}
         onClick={() => inputRef.current?.focus()}
       >
-        <span className="text-xs font-bold flex-shrink-0" style={{ color: "var(--text-xmuted)" }}>CHF</span>
+        <span
+          style={{
+            fontSize: "13px",
+            color: "var(--color-muted)",
+            marginRight: "10px",
+            fontFamily: "var(--font-body)",
+            flexShrink: 0,
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: "13px",
+            color: "var(--color-muted)",
+            marginRight: "6px",
+            fontFamily: "var(--font-body)",
+            flexShrink: 0,
+            marginLeft: "auto",
+          }}
+        >
+          CHF
+        </span>
         <input
           ref={inputRef}
           type="text"
@@ -67,8 +89,17 @@ export function BudgetField({ label, value, onChange, accentColor }: Props) {
           onBlur={handleBlur}
           onChange={handleChange}
           placeholder="0"
-          className="flex-1 bg-transparent outline-none text-sm font-semibold text-right"
-          style={{ color: "var(--text)", fontFamily: "var(--font-body)" }}
+          style={{
+            border: "none",
+            background: "transparent",
+            fontFamily: "var(--font-display)",
+            fontSize: "16px",
+            color: "var(--color-ink)",
+            textAlign: "right",
+            width: "90px",
+            outline: "none",
+            fontWeight: 500,
+          }}
         />
       </div>
     </div>
