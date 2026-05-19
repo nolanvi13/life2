@@ -14,6 +14,133 @@ interface EditState {
   category: string;
 }
 
+const inputStyle = {
+  background: "var(--bg)",
+  border: "1.5px solid var(--accent-green)",
+  color: "var(--text)",
+  outline: "none",
+};
+
+interface ItemRowProps {
+  item: ItemCourse;
+  idx: number;
+  total: number;
+  editing: EditState | null;
+  onToggleCheck: (id: string, checked: boolean) => void;
+  onDelete: (id: string) => void;
+  onStartEdit: (item: ItemCourse) => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onEditChange: (patch: Partial<EditState>) => void;
+}
+
+function ItemRow({ item, idx, total, editing, onToggleCheck, onDelete, onStartEdit, onSaveEdit, onCancelEdit, onEditChange }: ItemRowProps) {
+  const isEditing = editing?.id === item.id;
+
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-2.5 group"
+      style={{ borderBottom: idx < total - 1 ? "1px solid var(--border)" : "none" }}
+    >
+      {/* Checkbox */}
+      <button
+        onClick={() => { onCancelEdit(); onToggleCheck(item.id, true); }}
+        className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all duration-150"
+        style={{ borderColor: "var(--border)" }}
+        aria-label="Cocher"
+      />
+
+      {isEditing && editing ? (
+        /* ── Edit mode ── */
+        <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+          {/* Row 1 : nom + qté + unité + actions */}
+          <div className="flex items-center gap-1.5">
+            <input
+              autoFocus
+              value={editing.name}
+              onChange={(e) => onEditChange({ name: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit(); if (e.key === "Escape") onCancelEdit(); }}
+              className="flex-1 h-8 px-2.5 rounded-xl text-sm min-w-0"
+              style={inputStyle}
+            />
+            <input
+              value={editing.quantity}
+              onChange={(e) => onEditChange({ quantity: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit(); if (e.key === "Escape") onCancelEdit(); }}
+              placeholder="Qté"
+              className="w-14 h-8 px-2 rounded-xl text-sm text-center"
+              style={inputStyle}
+            />
+            <input
+              value={editing.unit}
+              onChange={(e) => onEditChange({ unit: e.target.value })}
+              onKeyDown={(e) => { if (e.key === "Enter") onSaveEdit(); if (e.key === "Escape") onCancelEdit(); }}
+              placeholder="g/ml…"
+              className="w-14 h-8 px-2 rounded-xl text-sm"
+              style={inputStyle}
+            />
+            <button
+              onClick={onSaveEdit}
+              className="w-7 h-7 flex items-center justify-center rounded-lg flex-shrink-0"
+              style={{ background: "var(--pastel-green)", color: "var(--accent-green)" }}
+            >
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
+            <button
+              onClick={onCancelEdit}
+              className="w-7 h-7 flex items-center justify-center rounded-lg flex-shrink-0"
+              style={{ color: "var(--text-xmuted)", background: "var(--surface-2)" }}
+            >
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {/* Row 2 : catégorie */}
+          <select
+            value={editing.category}
+            onChange={(e) => onEditChange({ category: e.target.value })}
+            className="h-8 px-2.5 rounded-xl text-xs w-full"
+            style={inputStyle}
+          >
+            {[...CATEGORY_ORDER, "Divers"].filter((v, i, a) => a.indexOf(v) === i).map((cat) => (
+              <option key={cat} value={cat}>
+                {CATEGORY_ICONS[cat] ?? "🛍️"} {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        /* ── Display mode ── */
+        <>
+          <button
+            className="flex-1 text-left min-w-0 py-0.5"
+            onClick={() => onStartEdit(item)}
+          >
+            <span className="text-sm" style={{ color: "var(--text)" }}>{item.name}</span>
+            {(item.quantity || item.unit) && (
+              <span className="text-xs ml-1.5" style={{ color: "var(--text-xmuted)" }}>
+                {[item.quantity, item.unit].filter(Boolean).join(" ")}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => onDelete(item.id)}
+            className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full transition-all flex-shrink-0"
+            style={{ color: "var(--text-xmuted)" }}
+          >
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function CoursesPage() {
   const { coupleId } = useApp();
   const { items, loading, addItem, toggleCheck, deleteItem, updateItem, clearChecked, clearAll } = useCourses(coupleId);
@@ -69,121 +196,6 @@ export function CoursesPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement…</div>
-      </div>
-    );
-  }
-
-  const inputStyle = {
-    background: "var(--bg)",
-    border: "1.5px solid var(--accent-green)",
-    color: "var(--text)",
-    outline: "none",
-  };
-
-  function ItemRow({ item, idx, total }: { item: ItemCourse; idx: number; total: number }) {
-    const isEditing = editing?.id === item.id;
-
-    return (
-      <div
-        key={item.id}
-        className="flex items-center gap-3 px-4 py-2.5 group"
-        style={{ borderBottom: idx < total - 1 ? "1px solid var(--border)" : "none" }}
-      >
-        {/* Checkbox */}
-        <button
-          onClick={() => { cancelEdit(); toggleCheck(item.id, true); }}
-          className="flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all duration-150"
-          style={{ borderColor: "var(--border)" }}
-          aria-label="Cocher"
-        />
-
-        {isEditing ? (
-          /* ── Edit mode ── */
-          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-            {/* Row 1 : nom + qté + unité + actions */}
-            <div className="flex items-center gap-1.5">
-              <input
-                autoFocus
-                value={editing.name}
-                onChange={(e) => setEditing((p) => p && { ...p, name: e.target.value })}
-                onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                className="flex-1 h-8 px-2.5 rounded-xl text-sm min-w-0"
-                style={inputStyle}
-              />
-              <input
-                value={editing.quantity}
-                onChange={(e) => setEditing((p) => p && { ...p, quantity: e.target.value })}
-                onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                placeholder="Qté"
-                className="w-14 h-8 px-2 rounded-xl text-sm text-center"
-                style={inputStyle}
-              />
-              <input
-                value={editing.unit}
-                onChange={(e) => setEditing((p) => p && { ...p, unit: e.target.value })}
-                onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                placeholder="g/ml…"
-                className="w-14 h-8 px-2 rounded-xl text-sm"
-                style={inputStyle}
-              />
-              <button
-                onClick={saveEdit}
-                className="w-7 h-7 flex items-center justify-center rounded-lg flex-shrink-0"
-                style={{ background: "var(--pastel-green)", color: "var(--accent-green)" }}
-              >
-                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </button>
-              <button
-                onClick={cancelEdit}
-                className="w-7 h-7 flex items-center justify-center rounded-lg flex-shrink-0"
-                style={{ color: "var(--text-xmuted)", background: "var(--surface-2)" }}
-              >
-                <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {/* Row 2 : catégorie */}
-            <select
-              value={editing.category}
-              onChange={(e) => setEditing((p) => p && { ...p, category: e.target.value })}
-              className="h-8 px-2.5 rounded-xl text-xs w-full"
-              style={inputStyle}
-            >
-              {[...CATEGORY_ORDER, "Divers"].filter((v, i, a) => a.indexOf(v) === i).map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_ICONS[cat] ?? "🛍️"} {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          /* ── Display mode ── */
-          <>
-            <button
-              className="flex-1 text-left min-w-0 py-0.5"
-              onClick={() => startEdit(item)}
-            >
-              <span className="text-sm" style={{ color: "var(--text)" }}>{item.name}</span>
-              {(item.quantity || item.unit) && (
-                <span className="text-xs ml-1.5" style={{ color: "var(--text-xmuted)" }}>
-                  {[item.quantity, item.unit].filter(Boolean).join(" ")}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => deleteItem(item.id)}
-              className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded-full transition-all flex-shrink-0"
-              style={{ color: "var(--text-xmuted)" }}
-            >
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </>
-        )}
       </div>
     );
   }
@@ -247,7 +259,19 @@ export function CoursesPage() {
           </div>
           <div className="rounded-2xl overflow-hidden" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
             {grouped[cat].map((item, idx) => (
-              <ItemRow key={item.id} item={item} idx={idx} total={grouped[cat].length} />
+              <ItemRow
+                key={item.id}
+                item={item}
+                idx={idx}
+                total={grouped[cat].length}
+                editing={editing}
+                onToggleCheck={toggleCheck}
+                onDelete={deleteItem}
+                onStartEdit={startEdit}
+                onSaveEdit={saveEdit}
+                onCancelEdit={cancelEdit}
+                onEditChange={(patch) => setEditing((p) => p ? { ...p, ...patch } : p)}
+              />
             ))}
           </div>
         </section>

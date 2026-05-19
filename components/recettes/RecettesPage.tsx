@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRecettes } from "@/hooks/useRecettes";
-import { useCourses } from "@/hooks/useCourses";
+import { useCoursesActions } from "@/hooks/useCoursesActions";
 import { RecetteCard } from "./RecetteCard";
 import { RecetteModal } from "./RecetteModal";
 import { AddRecetteModal } from "./AddRecetteModal";
@@ -15,7 +15,7 @@ const ALL = "Toutes";
 export function RecettesPage() {
   const { coupleId } = useApp();
   const { recettes, loading, addRecette, deleteRecette, toggleWeek } = useRecettes(coupleId);
-  const { addManyItems, removeByRecette } = useCourses(coupleId);
+  const { addManyItems, removeByRecette } = useCoursesActions(coupleId);
 
   const [selectedFilter, setSelectedFilter] = useState<string>(ALL);
   const [openRecette, setOpenRecette] = useState<Recette | null>(null);
