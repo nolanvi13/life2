@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { updateDisplayName, createCouple, joinCouple } from "@/app/actions/profile";
 import { logout } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useApp } from "@/components/providers/AppProvider";
+import { createClient } from "@/lib/supabase/client";
 
 function InitialsAvatar({ name, color, bg }: { name: string; color: string; bg: string }) {
   return (
@@ -37,21 +39,32 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function SettingsClient({
-  email,
-  displayName,
-  inviteCode: initialInviteCode,
-}: {
-  email: string;
-  displayName: string;
-  inviteCode: string | null;
-}) {
-  const [name, setName] = useState(displayName);
+export default function SettingsClient({ email }: { email: string }) {
+  const { coupleId, myName } = useApp();
+  const supabase = useRef(createClient()).current;
+
+  const [name, setName] = useState(myName ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
 
-  const [inviteCode, setInviteCode] = useState(initialInviteCode);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+
+  // Sync name when AppProvider loads it
+  useEffect(() => {
+    if (myName && !name) setName(myName);
+  }, [myName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch invite code lazily — doesn't block navigation
+  useEffect(() => {
+    if (!coupleId) return;
+    supabase
+      .from("couples")
+      .select("invite_code")
+      .eq("id", coupleId)
+      .single()
+      .then(({ data }: { data: { invite_code: string } | null }) => { if (data) setInviteCode(data.invite_code); });
+  }, [coupleId]); // eslint-disable-line react-hooks/exhaustive-deps
   const [copied, setCopied] = useState(false);
 
   const [coupleMode, setCoupleMode] = useState<"join" | null>(null);
