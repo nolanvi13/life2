@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { BudgetPage } from "@/components/budget/BudgetPage";
 import { CoursesPage } from "@/components/courses/CoursesPage";
@@ -17,27 +17,28 @@ function pathnameToTab(pathname: string): Tab | null {
   if (pathname.startsWith("/courses"))    return "courses";
   if (pathname.startsWith("/recettes"))   return "recettes";
   if (pathname.startsWith("/calendrier")) return "calendrier";
-  return null; // /settings and any other non-tab page
+  return null;
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const activeTab = pathnameToTab(pathname);
 
-  // Initialize with the first tab the user lands on
+  // Track which tabs have been visited so they stay mounted (keep state/data).
+  // Initialize with current tab so first render is instant.
   const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(() => {
     const t = pathnameToTab(pathname);
     return t ? new Set([t]) : new Set();
   });
 
-  // useLayoutEffect: fires synchronously before paint → no blank flash on tab switch
-  useLayoutEffect(() => {
+  // After mount, keep track of every visited tab
+  useEffect(() => {
     if (activeTab && !mountedTabs.has(activeTab)) {
       setMountedTabs((prev) => new Set([...prev, activeTab]));
     }
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Non-tab route (settings, etc.) — render page content normally
+  // Non-tab route (settings, etc.) — render via normal routing
   if (activeTab === null) {
     return <>{children}</>;
   }
@@ -45,10 +46,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       {TABS.map((tab) => {
-        // Only render once the tab has been visited
-        if (!mountedTabs.has(tab)) return null;
+        // Render if: currently active (always show) OR previously visited (keep mounted)
+        const isActive = tab === activeTab;
+        if (!isActive && !mountedTabs.has(tab)) return null;
         return (
-          <div key={tab} style={{ display: tab === activeTab ? "block" : "none" }}>
+          <div key={tab} style={{ display: isActive ? "block" : "none" }}>
             {tab === "dashboard"  && <DashboardPage />}
             {tab === "budget"     && <BudgetPage />}
             {tab === "courses"    && <CoursesPage />}

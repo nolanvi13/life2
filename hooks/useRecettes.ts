@@ -11,6 +11,7 @@ export function useRecettes(coupleId: string) {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const load = useCallback(async () => {
+    if (!coupleId) return;
     const { data } = await supabase
       .from("recettes")
       .select("*")
@@ -21,6 +22,7 @@ export function useRecettes(coupleId: string) {
   }, [coupleId]);
 
   useEffect(() => {
+    if (!coupleId) return;
     load();
 
     const channel = supabase

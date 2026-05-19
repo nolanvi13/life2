@@ -35,6 +35,7 @@ export function useCalendrier(coupleId: string) {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const load = useCallback(async () => {
+    if (!coupleId) return;
     const { data } = await supabase
       .from("evenements")
       .select("*")
@@ -45,6 +46,7 @@ export function useCalendrier(coupleId: string) {
   }, [coupleId]);
 
   useEffect(() => {
+    if (!coupleId) return;
     load();
     const channel = supabase
       .channel(`evenements:${coupleId}`)

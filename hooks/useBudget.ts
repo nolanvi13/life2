@@ -41,6 +41,7 @@ export function useBudget(coupleId: string): UseBudgetReturn {
       setLoading(false);
     }
 
+    if (!coupleId) return;
     load();
 
     const channel = supabase
