@@ -1,5 +1,2 @@
-import { BudgetPage } from "@/components/budget/BudgetPage";
-
-export default function Budget() {
-  return <BudgetPage />;
-}
+// Content rendered by AppShell in layout — no server fetch needed
+export default function Budget() { return null; }

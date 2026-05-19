@@ -1,5 +1,2 @@
-import { CalendrierPage } from "@/components/calendrier/CalendrierPage";
-
-export default function Calendrier() {
-  return <CalendrierPage />;
-}
+// Content rendered by AppShell in layout — no server fetch needed
+export default function Calendrier() { return null; }

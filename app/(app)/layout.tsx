@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Sidebar, BottomNav } from "@/components/layout/Navbar";
 import { AppProvider } from "@/components/providers/AppProvider";
+import { AppShell } from "@/components/layout/AppShell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -16,7 +17,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!me?.couple_id) redirect("/settings");
 
-  // Fetch couple members once for the whole app
   const { data: allProfiles } = await supabase
     .from("profiles")
     .select("id, display_name, created_at")
@@ -46,7 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-screen" style={{ background: "var(--bg)" }}>
         <Sidebar />
         <main className="flex-1 min-w-0 pb-20 md:pb-0">
-          {children}
+          <AppShell>{children}</AppShell>
         </main>
         <BottomNav />
       </div>

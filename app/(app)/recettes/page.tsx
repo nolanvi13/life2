@@ -1,5 +1,2 @@
-import { RecettesPage } from "@/components/recettes/RecettesPage";
-
-export default function Recettes() {
-  return <RecettesPage />;
-}
+// Content rendered by AppShell in layout — no server fetch needed
+export default function Recettes() { return null; }

@@ -1,5 +1,2 @@
-import { CoursesPage } from "@/components/courses/CoursesPage";
-
-export default function Courses() {
-  return <CoursesPage />;
-}
+// Content rendered by AppShell in layout — no server fetch needed
+export default function Courses() { return null; }

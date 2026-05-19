@@ -1,5 +1,2 @@
-import { DashboardPage } from "@/components/dashboard/DashboardPage";
-
-export default function Dashboard() {
-  return <DashboardPage />;
-}
+// Content rendered by AppShell in layout — no server fetch needed
+export default function Dashboard() { return null; }
