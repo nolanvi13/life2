@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget · Nolan & Lylou</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: #080808; color: #fff; min-height: 100vh; padding: 24px 16px; }
+  h1 { font-size: clamp(22px, 5vw, 38px); font-weight: 700; line-height: 1.1; }
+  .subtitle { font-size: 11px; letter-spacing: 0.1em; color: #f59e0b; text-transform: uppercase; margin-bottom: 4px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .header { margin-bottom: 24px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+  .tab-btn { flex: 1; padding: 8px 4px; border-radius: 8px; border: none; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; transition: all 0.2s; background: transparent; color: #555; }
+  .tab-btn.active { background: #f59e0b; color: #000; }
+
+  /* Grid auto */
+  .auto-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; }
+
+  /* Section */
+  .section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 16px; }
+
+  /* Field */
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .field-inner { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 12px; transition: border-color 0.2s; }
+  .field-inner:focus-within { border-color: rgba(245,158,11,0.4); }
+  .field-prefix { font-size: 11px; color: #444; }
+  .field input { background: transparent; color: #fff; font-size: 14px; font-family: monospace; width: 100%; outline: none; border: none; }
+
+  /* Row */
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #1a1a1a; }
+  .row-label { font-size: 13px; color: #ccc; }
+  .row-label.sub { padding-left: 12px; color: #555; }
+  .row-label.highlight { font-weight: 700; color: #fff; }
+  .row-value { font-size: 13px; font-family: monospace; color: #fff; }
+  .row-value.highlight { color: #f59e0b; font-weight: 700; }
+
+  /* Gauge */
+  .gauge { background: #0d0d0d; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .gauge-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .gauge-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; }
+  .gauge-status { font-size: 11px; font-weight: 600; }
+  .gauge-amount { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .gauge-amount span { font-size: 13px; font-weight: 400; color: #444; }
+  .gauge-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
+  .gauge-bar { height: 100%; border-radius: 99px; transition: width 0.5s; }
+  .gauge-pct { font-size: 11px; color: #444; margin-top: 6px; }
+
+  /* Vue couple stats */
+  .couple-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .stat-box { background: #0d0d0d; border-radius: 10px; padding: 14px; text-align: center; }
+  .stat-label { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .stat-value { font-size: 18px; font-weight: 700; }
+
+  /* Commun total */
+  .commun-total { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 16px; }
+  .commun-total-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .commun-total-amount { font-size: 28px; font-weight: 700; color: #34d399; }
+  .commun-total-sub { font-size: 13px; color: #555; margin-top: 4px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; border: 1px solid #333; color: #34d399; font-size: 12px; padding: 8px 16px; border-radius: 99px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  footer { font-size: 11px; color: #333; text-align: center; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="subtitle">Budget mensuel · Suisse</div>
+    <h1>Nolan & Lylou</h1>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('nolan',this)">Nolan</button>
+    <button class="tab-btn" onclick="switchTab('lylou',this)">Lylou</button>
+    <button class="tab-btn" onclick="switchTab('commun',this)">Commun</button>
+    <button class="tab-btn" onclick="switchTab('synthese',this)">Synthèse</button>
+  </div>
+
+  <!-- NOLAN -->
+  <div id="page-nolan" class="page active">
+    <div class="auto-grid">
+      <div>
+        <div class="section">
+          <div class="section-title" style="color:#f59e0b">Revenus</div>
+          <div class="field"><label>Salaire net</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_salaire" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f59e0b">Obligatoire</div>
+          <div class="field"><label>Impôts estimés</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_impots" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+          <div class="field"><label>Assurance maladie</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_assuranceMaladie" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f59e0b">Voiture</div>
+          <div class="field"><label>Leasing</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_leasing" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+          <div class="field"><label>Assurance auto</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_assuranceVoiture" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+          <div class="field"><label>Essence</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_essence" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+          <div class="field"><label>Entretien</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_entretienVoiture" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="section">
+          <div class="section-title" style="color:#f59e0b">Abonnements</div>
+          <div class="field"><label>Téléphone</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_telephone" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+          <div class="field"><label>Autres abos</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_abonnementsPerso" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f59e0b">Vie quotidienne</div>
+          <div class="field"><label>Loisirs</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_loisirs" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+          <div class="field"><label>Vêtements</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_vetements" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+          <div class="field"><label>Divers</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_divers" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f59e0b">Épargne</div>
+          <div class="field"><label>Épargne perso</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="n_epargne" oninput="handleInput(this,'n')" onfocus="onFocus(this)" onblur="onBlur(this,'n')"></div></div>
+        </div>
+        <div id="gauge-nolan" class="gauge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LYLOU -->
+  <div id="page-lylou" class="page">
+    <div class="auto-grid">
+      <div>
+        <div class="section">
+          <div class="section-title" style="color:#f472b6">Revenus</div>
+          <div class="field"><label>Salaire net</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_salaire" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f472b6">Obligatoire</div>
+          <div class="field"><label>Impôts estimés</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_impots" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+          <div class="field"><label>Assurance maladie</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_assuranceMaladie" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f472b6">Voiture</div>
+          <div class="field"><label>Leasing</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_leasing" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+          <div class="field"><label>Assurance auto</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_assuranceVoiture" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+          <div class="field"><label>Essence</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_essence" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+          <div class="field"><label>Entretien</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_entretienVoiture" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="section">
+          <div class="section-title" style="color:#f472b6">Abonnements</div>
+          <div class="field"><label>Téléphone</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_telephone" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+          <div class="field"><label>Autres abos</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_abonnementsPerso" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f472b6">Vie quotidienne</div>
+          <div class="field"><label>Loisirs</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_loisirs" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+          <div class="field"><label>Vêtements</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_vetements" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+          <div class="field"><label>Divers</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_divers" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f472b6">Épargne</div>
+          <div class="field"><label>Épargne perso</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="l_epargne" oninput="handleInput(this,'l')" onfocus="onFocus(this)" onblur="onBlur(this,'l')"></div></div>
+        </div>
+        <div id="gauge-lylou" class="gauge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMUN -->
+  <div id="page-commun" class="page">
+    <div class="auto-grid">
+      <div>
+        <div class="section">
+          <div class="section-title" style="color:#34d399">Logement</div>
+          <div class="field"><label>Loyer total</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_loyer" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+          <div class="field"><label>Internet / Wifi</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_wifi" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#34d399">Alimentation</div>
+          <div class="field"><label>Courses / Nourriture</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_nourriture" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#34d399">Abonnements communs</div>
+          <div class="field"><label>Netflix</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_netflix" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+          <div class="field"><label>Spotify</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_spotify" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="section">
+          <div class="section-title" style="color:#34d399">Loisirs communs</div>
+          <div class="field"><label>Sorties / Restos</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_sortiesCouple" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+          <div class="field"><label>Vacances (mensuel)</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_vacances" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+          <div class="field"><label>Divers commun</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_divers" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#34d399">Épargne commune</div>
+          <div class="field"><label>Épargne / projet commun</label><div class="field-inner"><span class="field-prefix">CHF</span><input type="text" inputmode="numeric" id="c_epargneCommune" oninput="handleInput(this,'c')" onfocus="onFocus(this)" onblur="onBlur(this,'c')"></div></div>
+        </div>
+        <div class="commun-total">
+          <div class="commun-total-label">Total commun</div>
+          <div class="commun-total-amount" id="commun-total-amount">—</div>
+          <div class="commun-total-sub">soit <span id="commun-part" style="color:#fff;font-weight:600">—</span> chacun</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYNTHESE -->
+  <div id="page-synthese" class="page">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+        <div id="gauge-synthese-nolan" class="gauge"></div>
+        <div id="gauge-synthese-lylou" class="gauge"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+        <div class="section">
+          <div class="section-title" style="color:#f59e0b">Nolan</div>
+          <div id="rows-nolan"></div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="color:#f472b6">Lylou</div>
+          <div id="rows-lylou"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title" style="color:#34d399">Vue couple</div>
+        <div class="couple-stats">
+          <div class="stat-box"><div class="stat-label">Revenus combinés</div><div class="stat-value" id="stat-revenus">—</div></div>
+          <div class="stat-box"><div class="stat-label">Dépenses totales</div><div class="stat-value" id="stat-depenses">—</div></div>
+          <div class="stat-box"><div class="stat-label">Reste combiné</div><div class="stat-value" style="color:#34d399" id="stat-reste">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Modifiable dans chaque onglet · Données sauvegardées automatiquement · Estimatif</footer>
+</div>
+
+<div class="toast" id="toast">💾 Sauvegardé</div>
+
+<script>
+const DEFAULTS = {
+  n: { salaire:6500, impots:600, leasing:1200, assuranceVoiture:350, essence:250, entretienVoiture:100, assuranceMaladie:430, telephone:50, abonnementsPerso:30, loisirs:300, vetements:100, divers:150, epargne:300 },
+  l: { salaire:4500, impots:400, leasing:0, assuranceVoiture:0, essence:0, entretienVoiture:0, assuranceMaladie:380, telephone:50, abonnementsPerso:20, loisirs:200, vetements:150, divers:100, epargne:200 },
+  c: { loyer:1550, nourriture:800, wifi:60, netflix:18, spotify:13, sortiesCouple:200, vacances:250, divers:100, epargneCommune:200 }
+};
+
+let data = { n: {...DEFAULTS.n}, l: {...DEFAULTS.l}, c: {...DEFAULTS.c} };
+
+const fmt = (n) => new Intl.NumberFormat('fr-CH', { style:'currency', currency:'CHF', maximumFractionDigits:0 }).format(n);
+
+// LocalStorage
+function save() {
+  try { localStorage.setItem('budget-nolan-lylou', JSON.stringify(data)); } catch(e) {}
+  showToast();
+}
+function load() {
+  try {
+    const s = localStorage.getItem('budget-nolan-lylou');
+    if (s) data = JSON.parse(s);
+  } catch(e) {}
+}
+
+let toastTimer;
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+// Input handling
+function onFocus(el) {
+  const key = el.id.split('_')[1];
+  const prefix = el.id.split('_')[0];
+  const val = data[prefix][key];
+  el.value = val === 0 ? '' : String(val);
+}
+function onBlur(el, prefix) {
+  const key = el.id.split('_')[1];
+  el.value = String(data[prefix][key]);
+}
+function handleInput(el, prefix) {
+  const key = el.id.split('_')[1];
+  const v = el.value.replace(/[^0-9]/g, '');
+  el.value = v;
+  data[prefix][key] = v === '' ? 0 : parseInt(v, 10);
+  save();
+  render();
+}
+
+// Tabs
+let currentTab = 'nolan';
+function switchTab(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  currentTab = id;
+  render();
+}
+
+// Calc
+function calc() {
+  const n = data.n, l = data.l, c = data.c;
+  const totalCommun = Object.values(c).reduce((a,b) => a+b, 0);
+  const partCommun = totalCommun / 2;
+  const depN = n.impots + n.leasing + n.assuranceVoiture + n.essence + n.entretienVoiture + n.assuranceMaladie + n.telephone + n.abonnementsPerso + n.loisirs + n.vetements + n.divers + n.epargne;
+  const depL = l.impots + l.leasing + l.assuranceVoiture + l.essence + l.entretienVoiture + l.assuranceMaladie + l.telephone + l.abonnementsPerso + l.loisirs + l.vetements + l.divers + l.epargne;
+  const totalN = depN + partCommun;
+  const totalL = depL + partCommun;
+  return { totalCommun, partCommun, depN, depL, totalN, totalL, resteN: n.salaire - totalN, resteL: l.salaire - totalL };
+}
+
+function gaugeHTML(label, reste, total, color) {
+  const p = total > 0 ? Math.max(0, Math.min((reste/total)*100, 100)) : 0;
+  const status = p >= 25 ? {t:'Confortable', c:'#34d399'} : p >= 12 ? {t:'Limite', c:'#f59e0b'} : {t:'Serré', c:'#f87171'};
+  return `
+    <div class="gauge-header">
+      <span class="gauge-label">${label}</span>
+      <span class="gauge-status" style="color:${status.c}">${status.t}</span>
+    </div>
+    <div class="gauge-amount" style="color:${color}">${fmt(reste)} <span>/ mois</span></div>
+    <div class="gauge-bar-bg"><div class="gauge-bar" style="width:${p.toFixed(1)}%;background:${status.c}"></div></div>
+    <div class="gauge-pct">${p.toFixed(0)}% du salaire net</div>
+  `;
+}
+
+function rowHTML(label, value, sub, highlight) {
+  return `<div class="row">
+    <span class="row-label${sub?' sub':''}${highlight?' highlight':''}">${label}</span>
+    <span class="row-value${highlight?' highlight':''}">${fmt(value)}</span>
+  </div>`;
+}
+
+function render() {
+  const r = calc();
+  const n = data.n, l = data.l, c = data.c;
+
+  // Gauge nolan tab
+  const gn = document.getElementById('gauge-nolan');
+  if (gn) gn.innerHTML = gaugeHTML('Reste à vivre (hors commun)', n.salaire - r.depN, n.salaire, '#f59e0b');
+
+  // Gauge lylou tab
+  const gl = document.getElementById('gauge-lylou');
+  if (gl) gl.innerHTML = gaugeHTML('Reste à vivre (hors commun)', l.salaire - r.depL, l.salaire, '#f472b6');
+
+  // Commun total
+  const cta = document.getElementById('commun-total-amount');
+  if (cta) cta.textContent = fmt(r.totalCommun);
+  const cp = document.getElementById('commun-part');
+  if (cp) cp.textContent = fmt(r.partCommun);
+
+  // Synthese
+  const gsn = document.getElementById('gauge-synthese-nolan');
+  if (gsn) gsn.innerHTML = gaugeHTML('Reste à vivre — Nolan', r.resteN, n.salaire, '#f59e0b');
+  const gsl = document.getElementById('gauge-synthese-lylou');
+  if (gsl) gsl.innerHTML = gaugeHTML('Reste à vivre — Lylou', r.resteL, l.salaire, '#f472b6');
+
+  const rn = document.getElementById('rows-nolan');
+  if (rn) rn.innerHTML =
+    rowHTML('Salaire net', n.salaire) +
+    rowHTML('Impôts', n.impots, true) +
+    rowHTML('Assurance maladie', n.assuranceMaladie, true) +
+    rowHTML('Voiture (total)', n.leasing+n.assuranceVoiture+n.essence+n.entretienVoiture, true) +
+    rowHTML('Tél. & abos', n.telephone+n.abonnementsPerso, true) +
+    rowHTML('Loisirs & vie', n.loisirs+n.vetements+n.divers, true) +
+    rowHTML('Épargne perso', n.epargne, true) +
+    rowHTML('Part commun', r.partCommun, true) +
+    rowHTML('Total dépenses', r.totalN, false, true) +
+    rowHTML('Reste à vivre', r.resteN, false, true);
+
+  const rl = document.getElementById('rows-lylou');
+  if (rl) rl.innerHTML =
+    rowHTML('Salaire net', l.salaire) +
+    rowHTML('Impôts', l.impots, true) +
+    rowHTML('Assurance maladie', l.assuranceMaladie, true) +
+    rowHTML('Voiture (total)', l.leasing+l.assuranceVoiture+l.essence+l.entretienVoiture, true) +
+    rowHTML('Tél. & abos', l.telephone+l.abonnementsPerso, true) +
+    rowHTML('Loisirs & vie', l.loisirs+l.vetements+l.divers, true) +
+    rowHTML('Épargne perso', l.epargne, true) +
+    rowHTML('Part commun', r.partCommun, true) +
+    rowHTML('Total dépenses', r.totalL, false, true) +
+    rowHTML('Reste à vivre', r.resteL, false, true);
+
+  const sr = document.getElementById('stat-revenus');
+  if (sr) sr.textContent = fmt(n.salaire + l.salaire);
+  const sd = document.getElementById('stat-depenses');
+  if (sd) sd.textContent = fmt(r.totalN + r.totalL);
+  const sreste = document.getElementById('stat-reste');
+  if (sreste) sreste.textContent = fmt(r.resteN + r.resteL);
+}
+
+function fillInputs() {
+  Object.keys(data).forEach(prefix => {
+    Object.keys(data[prefix]).forEach(key => {
+      const el = document.getElementById(prefix + '_' + key);
+      if (el) el.value = String(data[prefix][key]);
+    });
+  });
+}
+
+// Init
+load();
+fillInputs();
+render();
+</script>
+</body>
+</html>
