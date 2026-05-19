@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { BudgetOwner, BudgetValues } from "@/lib/budget";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 type Entry = {
   id: string;
@@ -47,7 +48,7 @@ export function useBudget(coupleId: string): UseBudgetReturn {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "budget_entries", filter: `couple_id=eq.${coupleId}` },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<Entry>) => {
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
             const e = payload.new as Entry;
             idMap.current.set(`${e.owner}_${e.label}`, e.id);
@@ -98,7 +99,7 @@ export function useBudget(coupleId: string): UseBudgetReturn {
         .insert({ couple_id: coupleId, owner, category, label: key, amount: value })
         .select("id, owner, category, label, amount")
         .single()
-        .then(({ data }) => {
+        .then(({ data }: { data: Entry | null; error: unknown }) => {
           if (data) {
             idMap.current.set(mapKey, data.id);
             setEntries((prev) => [...prev, data]);

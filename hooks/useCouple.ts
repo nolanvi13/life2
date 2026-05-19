@@ -60,7 +60,7 @@ export function useCouple(): CoupleData {
           .single(),
       ]);
 
-      const partner = profiles?.find((p) => p.id !== user.id) ?? null;
+      const partner = profiles?.find((p: Profile) => p.id !== user.id) ?? null;
 
       setData({
         coupleId: me.couple_id,
