@@ -100,7 +100,7 @@ export default function SettingsClient({
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-8 pb-24 md:pb-8">
+    <div className="max-w-lg mx-auto px-4 pt-8 pb-32 md:pb-8">
 
       {/* Personal header */}
       <div className="flex items-center gap-4 mb-8 animate-fade-up">

@@ -94,7 +94,7 @@ export function BudgetPage({ coupleId, nolanName, lylouName, myOwner }: {
   const activeTab = TABS.find((t) => t.id === tab)!;
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-24 md:pb-8">
+    <div className="max-w-lg mx-auto px-4 pt-6 pb-32 md:pb-8">
 
       {/* Header */}
       <h1 className="text-2xl font-bold mb-5" style={{ fontFamily: "var(--font-display)", color: "var(--text)" }}>

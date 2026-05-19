@@ -64,7 +64,7 @@ export default async function DashboardPage() {
   const partnerName = partner?.display_name;
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-8 pb-24 md:pb-8">
+    <div className="max-w-lg mx-auto px-4 pt-8 pb-32 md:pb-8">
 
       {/* Header */}
       <div className="flex items-start justify-between mb-8 animate-fade-up">

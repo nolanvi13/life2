@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/budget",     label: "Budget",     icon: "💰", bg: "var(--pastel-purple)", accent: "var(--accent-purple)" },
+  { href: "/dashboard",  label: "Accueil",    icon: "🏡", bg: "var(--pastel-purple)", accent: "var(--accent-purple)" },
+  { href: "/budget",     label: "Budget",     icon: "💰", bg: "var(--pastel-yellow)", accent: "#8B6914"              },
   { href: "/recettes",   label: "Recettes",   icon: "🍳", bg: "var(--pastel-green)",  accent: "var(--accent-green)"  },
   { href: "/courses",    label: "Courses",    icon: "🛒", bg: "var(--pastel-blue)",   accent: "var(--accent-blue)"   },
   { href: "/calendrier", label: "Calendrier", icon: "📅", bg: "var(--pastel-peach)",  accent: "var(--accent-peach)"  },
+  { href: "/settings",   label: "Réglages",   icon: "⚙️", bg: "var(--surface-3)",     accent: "var(--accent-purple)" },
 ];
 
 export function BottomNav() {
@@ -19,32 +21,33 @@ export function BottomNav() {
       style={{
         background: "var(--surface)",
         borderTop: "1px solid var(--border)",
-        paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+        paddingBottom: "max(env(safe-area-inset-bottom), 10px)",
         paddingTop: "8px",
-        height: "calc(64px + max(env(safe-area-inset-bottom), 8px))",
+        height: "calc(60px + max(env(safe-area-inset-bottom), 10px))",
       }}
     >
       {NAV_ITEMS.map((item) => {
-        const active = pathname.startsWith(item.href);
+        const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
         return (
           <Link
             key={item.href}
             href={item.href}
-            className="flex items-center justify-center gap-1.5 rounded-2xl transition-all duration-200 overflow-hidden"
+            className="flex items-center justify-center gap-1 rounded-2xl transition-all duration-200 overflow-hidden"
             style={{
               flex: active ? "2 1 0" : "1 1 0",
-              height: "44px",
+              height: "42px",
               background: active ? item.bg : "transparent",
               minWidth: 0,
             }}
           >
-            <span className="text-lg leading-none flex-shrink-0">{item.icon}</span>
+            <span className="text-base leading-none flex-shrink-0">{item.icon}</span>
             <span
-              className="font-semibold text-sm whitespace-nowrap overflow-hidden transition-all duration-200"
+              className="font-semibold whitespace-nowrap overflow-hidden transition-all duration-200"
               style={{
                 fontFamily: "var(--font-display)",
                 color: item.accent,
-                maxWidth: active ? "80px" : "0px",
+                fontSize: "11px",
+                maxWidth: active ? "64px" : "0px",
                 opacity: active ? 1 : 0,
               }}
             >

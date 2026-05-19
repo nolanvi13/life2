@@ -79,7 +79,7 @@ export function CalendrierPage({ coupleId }: { coupleId: string }) {
   const firstDay = getFirstDayOfWeek(viewYear, viewMonth);
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-6 pb-24 md:pb-8">
+    <div className="max-w-lg mx-auto px-4 pt-6 pb-32 md:pb-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)", color: "var(--text)" }}>
