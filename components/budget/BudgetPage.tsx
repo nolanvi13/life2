@@ -8,6 +8,7 @@ import {
   PERSONAL_SECTIONS, COMMUN_SECTIONS, calcBudget, fmt,
   type BudgetOwner, type SectionDef,
 } from "@/lib/budget";
+import { useApp } from "@/components/providers/AppProvider";
 
 type Tab = "nolan" | "lylou" | "commun" | "synthese";
 
@@ -71,12 +72,8 @@ function SynthRow({ label, value, highlight, sub }: { label: string; value: numb
   );
 }
 
-export function BudgetPage({ coupleId, nolanName, lylouName, myOwner }: {
-  coupleId: string;
-  nolanName: string;
-  lylouName: string;
-  myOwner: "nolan" | "lylou";
-}) {
+export function BudgetPage() {
+  const { coupleId, nolanName, lylouName, myOwner } = useApp();
   const [tab, setTab] = useState<Tab>(myOwner);
   const { nolan, lylou, commun, loading, updateField } = useBudget(coupleId);
 

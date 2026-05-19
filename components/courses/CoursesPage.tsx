@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCourses } from "@/hooks/useCourses";
 import { CATEGORY_ICONS, CATEGORY_ORDER, getIngredientCategory } from "@/lib/recettes";
 import type { ItemCourse } from "@/lib/recettes";
+import { useApp } from "@/components/providers/AppProvider";
 
 interface EditState {
   id: string;
@@ -13,7 +14,8 @@ interface EditState {
   category: string;
 }
 
-export function CoursesPage({ coupleId }: { coupleId: string }) {
+export function CoursesPage() {
+  const { coupleId } = useApp();
   const { items, loading, addItem, toggleCheck, deleteItem, updateItem, clearChecked, clearAll } = useCourses(coupleId);
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);

@@ -8,10 +8,12 @@ import { RecetteModal } from "./RecetteModal";
 import { AddRecetteModal } from "./AddRecetteModal";
 import type { Recette, ItemCourse } from "@/lib/recettes";
 import { RECETTE_CATEGORIES } from "@/lib/recettes";
+import { useApp } from "@/components/providers/AppProvider";
 
 const ALL = "Toutes";
 
-export function RecettesPage({ coupleId }: { coupleId: string }) {
+export function RecettesPage() {
+  const { coupleId } = useApp();
   const { recettes, loading, addRecette, deleteRecette, toggleWeek } = useRecettes(coupleId);
   const { addManyItems, removeByRecette } = useCourses(coupleId);
 

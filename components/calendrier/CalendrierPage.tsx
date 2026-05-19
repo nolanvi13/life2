@@ -3,6 +3,7 @@
 import { useState, type ReactElement } from "react";
 import { useCalendrier, CATEGORIE_COLORS, CATEGORIES, type Evenement, type EventCategorie } from "@/hooks/useCalendrier";
 import { EventModal } from "./EventModal";
+import { useApp } from "@/components/providers/AppProvider";
 
 const JOURS = ["L", "M", "M", "J", "V", "S", "D"];
 const MOIS = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -30,7 +31,8 @@ function dayOfWeek(ymd: string): string {
 
 type View = "mois" | "agenda";
 
-export function CalendrierPage({ coupleId }: { coupleId: string }) {
+export function CalendrierPage() {
+  const { coupleId } = useApp();
   const { evenements, loading, addEvenement, updateEvenement, deleteEvenement } = useCalendrier(coupleId);
   const today = new Date();
   const todayYMD = toYMD(today);
