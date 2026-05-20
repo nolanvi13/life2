@@ -4,19 +4,23 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { BudgetPage } from "@/components/budget/BudgetPage";
+import { DepensesPage } from "@/components/depenses/DepensesPage";
+import { NotesPage } from "@/components/notes/NotesPage";
 import { CoursesPage } from "@/components/courses/CoursesPage";
 import { RecettesPage } from "@/components/recettes/RecettesPage";
 import { CalendrierPage } from "@/components/calendrier/CalendrierPage";
 
-type Tab = "dashboard" | "budget" | "courses" | "recettes" | "calendrier";
-const TABS: Tab[] = ["dashboard", "budget", "courses", "recettes", "calendrier"];
+type Tab = "dashboard" | "budget" | "depenses" | "courses" | "recettes" | "calendrier" | "notes";
+const TABS: Tab[] = ["dashboard", "budget", "depenses", "courses", "recettes", "calendrier", "notes"];
 
 function pathnameToTab(pathname: string): Tab | null {
   if (pathname === "/" || pathname.startsWith("/dashboard")) return "dashboard";
   if (pathname.startsWith("/budget"))     return "budget";
+  if (pathname.startsWith("/depenses"))   return "depenses";
   if (pathname.startsWith("/courses"))    return "courses";
   if (pathname.startsWith("/recettes"))   return "recettes";
   if (pathname.startsWith("/calendrier")) return "calendrier";
+  if (pathname.startsWith("/notes"))      return "notes";
   return null;
 }
 
@@ -53,9 +57,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div key={tab} style={{ display: isActive ? "block" : "none" }}>
             {tab === "dashboard"  && <DashboardPage />}
             {tab === "budget"     && <BudgetPage />}
+            {tab === "depenses"   && <DepensesPage />}
             {tab === "courses"    && <CoursesPage />}
             {tab === "recettes"   && <RecettesPage />}
             {tab === "calendrier" && <CalendrierPage />}
+            {tab === "notes"      && <NotesPage />}
           </div>
         );
       })}
