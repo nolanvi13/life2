@@ -162,6 +162,14 @@ function NoteEditor({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
+  // Refs toujours à jour pour la closure de l'unmount
+  const latestTitle = useRef(note.title);
+  const latestContent = useRef(note.content);
+  const onUpdateRef = useRef(onUpdate);
+  useEffect(() => { latestTitle.current = title; }, [title]);
+  useEffect(() => { latestContent.current = content; }, [content]);
+  useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
+
   // Auto-resize textarea
   useEffect(() => {
     const el = contentRef.current;
@@ -172,8 +180,9 @@ function NoteEditor({
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSaveStatus("saving");
     saveTimer.current = setTimeout(async () => {
+      saveTimer.current = null; // marquer comme déclenché
       try {
-        await onUpdate({ title: t, content: c });
+        await onUpdateRef.current({ title: t, content: c });
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
       } catch (e) {
@@ -181,17 +190,18 @@ function NoteEditor({
         setSaveStatus("error");
       }
     }, 600);
-  }, [onUpdate]);
+  }, []);
 
   function handleTitle(v: string) { setTitle(v); save(v, content); }
   function handleContent(v: string) { setContent(v); save(title, v); }
 
-  // Save on unmount
+  // Sauvegarde à la fermeture — utilise les refs pour avoir les valeurs actuelles
   useEffect(() => {
     return () => {
       if (saveTimer.current) {
+        // Il reste une sauvegarde en attente : l'exécuter tout de suite avec les vraies valeurs
         clearTimeout(saveTimer.current);
-        onUpdate({ title, content });
+        onUpdateRef.current({ title: latestTitle.current, content: latestContent.current });
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
