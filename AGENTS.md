@@ -1,4 +1,16 @@
 <!-- BEGIN:nextjs-agent-rules -->
+# Déploiement — règle obligatoire
+
+**À chaque déploiement, toujours faire dans cet ordre :**
+1. `git add <fichiers modifiés>`
+2. `git commit -m "..."`
+3. `git push` → sauvegarde sur GitHub
+4. `npx vercel --prod` → déploiement production
+
+Ne jamais déployer sur Vercel sans avoir d'abord pushé sur GitHub.
+
+---
+
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
