@@ -223,7 +223,7 @@ function NoteEditor({
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          Notes
+          Retour
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
