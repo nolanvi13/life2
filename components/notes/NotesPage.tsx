@@ -1,9 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Placeholder from "@tiptap/extension-placeholder";
 import { useApp } from "@/components/providers/AppProvider";
 import { useNotes } from "@/hooks/useNotes";
 import type { Note } from "@/lib/notes";
+import {
+  IconBold, IconItalic, IconUnderline, IconList, IconListCheck,
+  IconH1, IconH2, IconStrikethrough,
+} from "@tabler/icons-react";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -12,17 +22,20 @@ const MOIS = ["jan","fév","mar","avr","mai","juin","juil","aoû","sep","oct","n
 function formatDate(iso: string) {
   const d = new Date(iso);
   const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffH = diffMs / 3600000;
+  const diffH = (now.getTime() - d.getTime()) / 3600000;
   if (diffH < 1) return "À l'instant";
   if (diffH < 24) return `Il y a ${Math.floor(diffH)}h`;
   if (diffH < 48) return "Hier";
   return `${d.getDate()} ${MOIS[d.getMonth()]}`;
 }
 
+function stripHtml(html: string) {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function notePreview(note: Note): string {
-  if (note.content.trim()) return note.content.replace(/\n/g, " ").slice(0, 60);
-  return "Pas de contenu";
+  if (!note.content.trim()) return "Pas de contenu";
+  return stripHtml(note.content).slice(0, 60) || "Pas de contenu";
 }
 
 function displayTitle(note: Note): string {
@@ -145,6 +158,33 @@ export function NotesPage() {
   );
 }
 
+/* ─── Bouton de formatage ─── */
+function FmtBtn({
+  onClick, active, title, children,
+}: {
+  onClick: () => void;
+  active?: boolean;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      title={title}
+      style={{
+        width: "34px", height: "34px", borderRadius: "8px", border: "none",
+        background: active ? "var(--color-forest)" : "transparent",
+        color: active ? "#fff" : "var(--color-ink)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        cursor: "pointer", flexShrink: 0, transition: "background 0.15s",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ─── Éditeur ─── */
 function NoteEditor({
   note, onUpdate, onClose, onDelete, authorName, confirmDelete, setConfirmDelete,
 }: {
@@ -157,59 +197,69 @@ function NoteEditor({
   setConfirmDelete: (v: boolean) => void;
 }) {
   const [title, setTitle] = useState(note.title);
-  const [content, setContent] = useState(note.content);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  // Refs toujours à jour pour la closure de l'unmount
+  // Refs pour la closure unmount
   const latestTitle = useRef(note.title);
   const latestContent = useRef(note.content);
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => { latestTitle.current = title; }, [title]);
-  useEffect(() => { latestContent.current = content; }, [content]);
   useEffect(() => { onUpdateRef.current = onUpdate; }, [onUpdate]);
 
-  // Auto-resize textarea
-  useEffect(() => {
-    const el = contentRef.current;
-    if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
-  }, [content]);
-
-  const save = useCallback((t: string, c: string) => {
+  const scheduleSave = useCallback((t: string, html: string) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSaveStatus("saving");
     saveTimer.current = setTimeout(async () => {
-      saveTimer.current = null; // marquer comme déclenché
+      saveTimer.current = null;
       try {
-        await onUpdateRef.current({ title: t, content: c });
+        await onUpdateRef.current({ title: t, content: html });
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch (e) {
-        console.error("[NoteEditor] save failed:", e);
+      } catch {
         setSaveStatus("error");
       }
-    }, 600);
+    }, 700);
   }, []);
 
-  function handleTitle(v: string) { setTitle(v); save(v, content); }
-  function handleContent(v: string) { setContent(v); save(title, v); }
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({ heading: { levels: [1, 2] } }),
+      Underline,
+      TaskList,
+      TaskItem.configure({ nested: false }),
+      Placeholder.configure({ placeholder: "Commence à écrire…" }),
+    ],
+    content: note.content || "",
+    onUpdate({ editor }) {
+      const html = editor.getHTML();
+      latestContent.current = html;
+      scheduleSave(latestTitle.current, html);
+    },
+    editorProps: {
+      attributes: { class: "tiptap-editor" },
+    },
+  });
 
-  // Sauvegarde à la fermeture — utilise les refs pour avoir les valeurs actuelles
+  // Sauvegarde à la fermeture
   useEffect(() => {
     return () => {
       if (saveTimer.current) {
-        // Il reste une sauvegarde en attente : l'exécuter tout de suite avec les vraies valeurs
         clearTimeout(saveTimer.current);
         onUpdateRef.current({ title: latestTitle.current, content: latestContent.current });
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  function handleTitle(v: string) {
+    setTitle(v);
+    scheduleSave(v, latestContent.current);
+  }
+
   const statusText =
     saveStatus === "saving" ? "Sauvegarde…" :
     saveStatus === "saved"  ? "✓ Sauvegardé" :
-    saveStatus === "error"  ? "⚠ Erreur sauvegarde" :
+    saveStatus === "error"  ? "⚠ Erreur" :
     "Auto-sauvegarde";
 
   const statusColor =
@@ -218,8 +268,9 @@ function NoteEditor({
     "var(--color-muted)";
 
   return (
-    <div className="max-w-lg mx-auto px-6 pt-6 pb-32 md:pb-10">
-      {/* Toolbar */}
+    <div className="max-w-lg mx-auto px-6 pt-6 pb-40 md:pb-16">
+
+      {/* Toolbar haut */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={onClose}
@@ -236,12 +287,12 @@ function NoteEditor({
           Retour
         </button>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ fontSize: "12px", color: statusColor, fontFamily: "var(--font-body)", transition: "color 0.3s" }}>
             {statusText}
           </span>
           {confirmDelete ? (
-            <div style={{ display: "flex", gap: "6px", marginLeft: "8px" }}>
+            <div style={{ display: "flex", gap: "6px", marginLeft: "4px" }}>
               <button
                 onClick={onDelete}
                 style={{ padding: "6px 12px", borderRadius: "8px", background: "#DC2626", color: "#fff", border: "none", fontSize: "12px", fontFamily: "var(--font-body)", cursor: "pointer", fontWeight: 600 }}
@@ -258,7 +309,7 @@ function NoteEditor({
           ) : (
             <button
               onClick={() => setConfirmDelete(true)}
-              style={{ marginLeft: "8px", color: "var(--color-muted)", background: "none", border: "none", cursor: "pointer", padding: "6px" }}
+              style={{ color: "var(--color-muted)", background: "none", border: "none", cursor: "pointer", padding: "6px" }}
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -268,12 +319,12 @@ function NoteEditor({
         </div>
       </div>
 
-      {/* Author + date */}
-      <p style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginBottom: "16px", letterSpacing: "0.3px" }}>
+      {/* Auteur + date */}
+      <p style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginBottom: "14px", letterSpacing: "0.3px" }}>
         Par {authorName} · {formatDate(note.updated_at)}
       </p>
 
-      {/* Title */}
+      {/* Titre */}
       <input
         value={title}
         onChange={(e) => handleTitle(e.target.value)}
@@ -281,27 +332,61 @@ function NoteEditor({
         style={{
           width: "100%", border: "none", outline: "none", background: "transparent",
           fontFamily: "var(--font-display)", fontSize: "28px", fontWeight: 500,
-          color: "var(--color-ink)", letterSpacing: "-0.5px", marginBottom: "16px",
+          color: "var(--color-ink)", letterSpacing: "-0.5px", marginBottom: "14px",
           padding: 0, lineHeight: 1.2,
         }}
       />
 
-      {/* Divider */}
+      {/* Barre de formatage */}
+      <div
+        style={{
+          display: "flex", alignItems: "center", gap: "2px",
+          padding: "6px 8px", borderRadius: "12px",
+          background: "var(--surface-2)", border: "0.5px solid var(--color-border)",
+          marginBottom: "14px", flexWrap: "wrap",
+        }}
+      >
+        <FmtBtn title="Gras" onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")}>
+          <IconBold size={15} stroke={2} />
+        </FmtBtn>
+        <FmtBtn title="Italique" onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive("italic")}>
+          <IconItalic size={15} stroke={2} />
+        </FmtBtn>
+        <FmtBtn title="Souligné" onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive("underline")}>
+          <IconUnderline size={15} stroke={2} />
+        </FmtBtn>
+        <FmtBtn title="Barré" onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive("strike")}>
+          <IconStrikethrough size={15} stroke={2} />
+        </FmtBtn>
+
+        {/* Séparateur */}
+        <div style={{ width: "1px", height: "20px", background: "var(--color-border)", margin: "0 4px" }} />
+
+        <FmtBtn title="Titre 1" onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive("heading", { level: 1 })}>
+          <IconH1 size={16} stroke={1.75} />
+        </FmtBtn>
+        <FmtBtn title="Titre 2" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive("heading", { level: 2 })}>
+          <IconH2 size={16} stroke={1.75} />
+        </FmtBtn>
+
+        {/* Séparateur */}
+        <div style={{ width: "1px", height: "20px", background: "var(--color-border)", margin: "0 4px" }} />
+
+        <FmtBtn title="Liste à puces" onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")}>
+          <IconList size={16} stroke={1.75} />
+        </FmtBtn>
+        <FmtBtn title="Liste à cocher" onClick={() => editor?.chain().focus().toggleTaskList().run()} active={editor?.isActive("taskList")}>
+          <IconListCheck size={16} stroke={1.75} />
+        </FmtBtn>
+      </div>
+
+      {/* Séparateur */}
       <div style={{ height: "1px", background: "var(--color-border)", marginBottom: "16px" }} />
 
-      {/* Content */}
-      <textarea
-        ref={contentRef}
-        value={content}
-        onChange={(e) => handleContent(e.target.value)}
-        placeholder="Commence à écrire…"
-        style={{
-          width: "100%", border: "none", outline: "none", background: "transparent",
-          fontFamily: "var(--font-body)", fontSize: "15px", lineHeight: 1.7,
-          color: "var(--color-ink)", resize: "none", minHeight: "300px",
-          padding: 0,
-        }}
-      />
+      {/* Contenu Tiptap */}
+      <div className="tiptap-editor">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }
