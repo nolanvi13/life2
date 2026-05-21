@@ -5,6 +5,8 @@ import { useApp } from "@/components/providers/AppProvider";
 import { useNotes } from "@/hooks/useNotes";
 import type { Note } from "@/lib/notes";
 
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
 const MOIS = ["jan","fév","mar","avr","mai","juin","juil","aoû","sep","oct","nov","déc"];
 
 function formatDate(iso: string) {
@@ -147,7 +149,7 @@ function NoteEditor({
   note, onUpdate, onClose, onDelete, authorName, confirmDelete, setConfirmDelete,
 }: {
   note: Note;
-  onUpdate: (fields: Partial<Pick<Note, "title" | "content">>) => void;
+  onUpdate: (fields: Partial<Pick<Note, "title" | "content">>) => Promise<void>;
   onClose: () => void;
   onDelete: () => Promise<void>;
   authorName: string;
@@ -156,6 +158,7 @@ function NoteEditor({
 }) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
@@ -167,7 +170,17 @@ function NoteEditor({
 
   const save = useCallback((t: string, c: string) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => onUpdate({ title: t, content: c }), 600);
+    setSaveStatus("saving");
+    saveTimer.current = setTimeout(async () => {
+      try {
+        await onUpdate({ title: t, content: c });
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } catch (e) {
+        console.error("[NoteEditor] save failed:", e);
+        setSaveStatus("error");
+      }
+    }, 600);
   }, [onUpdate]);
 
   function handleTitle(v: string) { setTitle(v); save(v, content); }
@@ -182,6 +195,17 @@ function NoteEditor({
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const statusText =
+    saveStatus === "saving" ? "Sauvegarde…" :
+    saveStatus === "saved"  ? "✓ Sauvegardé" :
+    saveStatus === "error"  ? "⚠ Erreur sauvegarde" :
+    "Auto-sauvegarde";
+
+  const statusColor =
+    saveStatus === "saved"  ? "var(--color-forest)" :
+    saveStatus === "error"  ? "#DC2626" :
+    "var(--color-muted)";
 
   return (
     <div className="max-w-lg mx-auto px-6 pt-6 pb-32 md:pb-10">
@@ -203,8 +227,8 @@ function NoteEditor({
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-          <span style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
-            Sauvegardé auto
+          <span style={{ fontSize: "12px", color: statusColor, fontFamily: "var(--font-body)", transition: "color 0.3s" }}>
+            {statusText}
           </span>
           {confirmDelete ? (
             <div style={{ display: "flex", gap: "6px", marginLeft: "8px" }}>

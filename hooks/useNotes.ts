@@ -41,10 +41,18 @@ export function useNotes(coupleId: string, myOwner: string) {
   }
 
   async function updateNote(id: string, fields: Partial<Pick<Note, "title" | "content">>) {
-    await supabase
+    const { error, count } = await supabase
       .from("notes")
-      .update({ ...fields, updated_at: new Date().toISOString() })
+      .update({ ...fields, updated_at: new Date().toISOString() }, { count: "exact" })
       .eq("id", id);
+    if (error) {
+      console.error("[useNotes] updateNote error:", error);
+      throw error;
+    }
+    if (count === 0) {
+      console.warn("[useNotes] updateNote: 0 rows updated — RLS block or wrong id?");
+      throw new Error("0 rows updated");
+    }
   }
 
   async function deleteNote(id: string) {
