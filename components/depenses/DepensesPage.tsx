@@ -215,10 +215,10 @@ export function DepensesPage() {
                   style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)" }}
                 >
                   <p style={{ fontSize: "14px", fontFamily: "var(--font-body)", fontWeight: 500, color: "var(--color-ink)", marginBottom: "4px" }}>
-                    Clôturer le mois ?
+                    Supprimer les dépenses de ce mois ?
                   </p>
                   <p style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginBottom: "12px" }}>
-                    Les {filtered.length} dépenses de ce mois seront supprimées. L'historique des mois précédents reste accessible.
+                    Les {filtered.length} dépenses seront effacées définitivement. Note : le changement de mois se fait automatiquement — cette action sert uniquement à effacer des données.
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -254,7 +254,7 @@ export function DepensesPage() {
                     fontSize: "13px", cursor: "pointer", transition: "all 0.15s",
                   }}
                 >
-                  🗓 Clôturer ce mois et repartir à zéro
+                  🗑 Effacer toutes les dépenses de ce mois
                 </button>
               )}
             </div>
