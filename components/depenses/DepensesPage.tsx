@@ -20,12 +20,11 @@ function formatDate(iso: string) {
 
 export function DepensesPage() {
   const { coupleId, myOwner, nolanName, lylouName } = useApp();
-  const { depenses, loading, addDepense, updateDepense, deleteDepense, deleteAll } = useDepenses(coupleId);
+  const { depenses, loading, addDepense, updateDepense, deleteDepense } = useDepenses(coupleId);
 
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Depense | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const now = new Date();
   const currentYM = toYM(now);
@@ -61,11 +60,6 @@ export function DepensesPage() {
     return ym === currentYM
       ? "Ce mois"
       : `${MOIS_COURT[mIdx]} ${y}`;
-  }
-
-  async function handleReset() {
-    await deleteAll(filtered.map((d) => d.id));
-    setConfirmReset(false);
   }
 
   if (loading) {
@@ -206,59 +200,6 @@ export function DepensesPage() {
             ))}
           </div>
 
-          {/* Reset button */}
-          {isCurrentMonth && filtered.length > 0 && (
-            <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--color-border)" }}>
-              {confirmReset ? (
-                <div
-                  className="rounded-2xl p-4"
-                  style={{ background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)" }}
-                >
-                  <p style={{ fontSize: "14px", fontFamily: "var(--font-body)", fontWeight: 500, color: "var(--color-ink)", marginBottom: "4px" }}>
-                    Supprimer les dépenses de ce mois ?
-                  </p>
-                  <p style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginBottom: "12px" }}>
-                    Les {filtered.length} dépenses seront effacées définitivement. Note : le changement de mois se fait automatiquement — cette action sert uniquement à effacer des données.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleReset}
-                      style={{
-                        flex: 1, padding: "10px", borderRadius: "10px", border: "none",
-                        background: "#DC2626", color: "#fff", fontFamily: "var(--font-body)",
-                        fontSize: "13px", fontWeight: 600, cursor: "pointer",
-                      }}
-                    >
-                      Oui, clôturer
-                    </button>
-                    <button
-                      onClick={() => setConfirmReset(false)}
-                      style={{
-                        flex: 1, padding: "10px", borderRadius: "10px",
-                        border: "1px solid var(--color-border)", background: "transparent",
-                        color: "var(--color-ink)", fontFamily: "var(--font-body)",
-                        fontSize: "13px", cursor: "pointer",
-                      }}
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmReset(true)}
-                  style={{
-                    width: "100%", padding: "12px", borderRadius: "12px",
-                    border: "1px solid var(--color-border)", background: "transparent",
-                    color: "var(--color-muted)", fontFamily: "var(--font-body)",
-                    fontSize: "13px", cursor: "pointer", transition: "all 0.15s",
-                  }}
-                >
-                  🗑 Effacer toutes les dépenses de ce mois
-                </button>
-              )}
-            </div>
-          )}
         </>
       )}
 
