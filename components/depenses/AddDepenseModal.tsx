@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { Depense, SplitType } from "@/lib/depenses";
 import { DEPENSE_CATEGORIES, CATEGORY_EMOJI, fmtCHF, owedAmount } from "@/lib/depenses";
 import { useApp } from "@/components/providers/AppProvider";
@@ -13,9 +13,28 @@ interface Props {
   initial?: Depense;
 }
 
+const CURRENCIES = [
+  { code: "CHF", flag: "🇨🇭" },
+  { code: "EUR", flag: "🇪🇺" },
+  { code: "USD", flag: "🇺🇸" },
+  { code: "GBP", flag: "🇬🇧" },
+  { code: "CAD", flag: "🇨🇦" },
+  { code: "AUD", flag: "🇦🇺" },
+  { code: "JPY", flag: "🇯🇵" },
+  { code: "SEK", flag: "🇸🇪" },
+  { code: "NOK", flag: "🇳🇴" },
+  { code: "DKK", flag: "🇩🇰" },
+  { code: "CZK", flag: "🇨🇿" },
+  { code: "HUF", flag: "🇭🇺" },
+  { code: "TRY", flag: "🇹🇷" },
+  { code: "THB", flag: "🇹🇭" },
+  { code: "HKD", flag: "🇭🇰" },
+  { code: "SGD", flag: "🇸🇬" },
+  { code: "MXN", flag: "🇲🇽" },
+];
+
 function splitTypeToChecks(splitType: SplitType, paidBy: "nolan" | "lylou") {
   if (splitType === "none") return { nolanChecked: paidBy === "nolan", lylouChecked: paidBy === "lylou" };
-  // half / full / custom → les deux participent
   return { nolanChecked: true, lylouChecked: true };
 }
 
@@ -24,7 +43,8 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
   const isEdit = !!initial;
 
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
+  const [amount, setAmount] = useState(initial?.original_amount ? String(initial.original_amount) : initial ? String(initial.amount) : "");
+  const [currency, setCurrency] = useState<string>(initial?.currency || "CHF");
   const [paidBy, setPaidBy] = useState<"nolan" | "lylou">(initial?.paid_by ?? myOwner);
   const [category, setCategory] = useState(initial?.category ?? "Autre");
 
@@ -32,14 +52,56 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
   const [nolanChecked, setNolanChecked] = useState(initChecks.nolanChecked);
   const [lylouChecked, setLylouChecked] = useState(initChecks.lylouChecked);
 
-  // Montant personnalisé
   const isInitCustom = initial?.split_type === "custom";
   const [useCustom, setUseCustom] = useState(isInitCustom);
   const [customAmount, setCustomAmount] = useState(
     isInitCustom && initial?.custom_amount ? String(initial.custom_amount) : ""
   );
 
+  // Conversion devise
+  const [convertedCHF, setConvertedCHF] = useState<number | null>(
+    initial ? initial.amount : null
+  );
+  const [converting, setConverting] = useState(false);
+  const [conversionError, setConversionError] = useState(false);
+  const convertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const firstRef = useRef<HTMLInputElement>(null);
+
+  const fetchConversion = useCallback(async (amt: number, cur: string) => {
+    if (cur === "CHF") { setConvertedCHF(amt); setConversionError(false); return; }
+    setConverting(true);
+    setConversionError(false);
+    try {
+      const res = await fetch(
+        `https://api.frankfurter.app/latest?from=${cur}&to=CHF&amount=${amt}`
+      );
+      const data = await res.json();
+      const chf = data?.rates?.CHF;
+      if (typeof chf === "number") {
+        setConvertedCHF(Math.round(chf * 100) / 100);
+      } else {
+        setConversionError(true);
+        setConvertedCHF(null);
+      }
+    } catch {
+      setConversionError(true);
+      setConvertedCHF(null);
+    } finally {
+      setConverting(false);
+    }
+  }, []);
+
+  // Re-convertir quand montant ou devise change
+  useEffect(() => {
+    const num = parseFloat(amount.replace(",", "."));
+    if (isNaN(num) || num <= 0) { setConvertedCHF(null); return; }
+    if (currency === "CHF") { setConvertedCHF(num); setConversionError(false); return; }
+    if (convertTimer.current) clearTimeout(convertTimer.current);
+    setConverting(true);
+    convertTimer.current = setTimeout(() => fetchConversion(num, currency), 500);
+    return () => { if (convertTimer.current) clearTimeout(convertTimer.current); };
+  }, [amount, currency, fetchConversion]);
 
   function handlePaidByChange(owner: "nolan" | "lylou") {
     setPaidBy(owner);
@@ -47,7 +109,6 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
     setLylouChecked(true);
   }
 
-  // Quand on décoche l'un → désactiver custom
   function handleNolanCheck(v: boolean) {
     setNolanChecked(v);
     if (!v) { setUseCustom(false); setCustomAmount(""); }
@@ -72,12 +133,10 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
   const validAmount = !isNaN(num) && num > 0;
   const bothChecked = nolanChecked && lylouChecked;
 
-  // Calcul du split_type final
   function getSplitType(): SplitType {
     if (!nolanChecked && !lylouChecked) return "none";
     if (nolanChecked && !lylouChecked) return paidBy === "nolan" ? "none" : "full";
     if (!nolanChecked && lylouChecked) return paidBy === "lylou" ? "none" : "full";
-    // les deux cochés
     if (useCustom) return "custom";
     return "half";
   }
@@ -90,12 +149,22 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!description.trim() || !validAmount) return;
+    if (!description.trim() || !validAmount || convertedCHF === null) return;
     const split_type = getSplitType();
     const custom_amount = getCustomAmount();
-    if (split_type === "custom" && (custom_amount === null || custom_amount <= 0 || custom_amount >= num)) return;
+    if (split_type === "custom" && (custom_amount === null || custom_amount <= 0 || custom_amount >= convertedCHF)) return;
+
     onClose();
-    await onSave({ description: description.trim(), amount: num, paid_by: paidBy, split_type, custom_amount, category });
+    await onSave({
+      description: description.trim(),
+      amount: convertedCHF,           // CHF converti → stocké en DB
+      original_amount: currency !== "CHF" ? num : null,
+      currency: currency !== "CHF" ? currency : "CHF",
+      paid_by: paidBy,
+      split_type,
+      custom_amount,
+      category,
+    });
   }
 
   const nameOf = (owner: "nolan" | "lylou") => owner === "nolan" ? nolanName : lylouName;
@@ -103,37 +172,31 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
   const customAmt = getCustomAmount();
   const nonPayer: "nolan" | "lylou" = paidBy === "nolan" ? "lylou" : "nolan";
 
-  // Preview
   function previewText(): string | null {
-    if (!validAmount) return null;
+    if (!validAmount || convertedCHF === null) return null;
     if (splitType === "none") return null;
     const payer = nameOf(paidBy);
     const other = nameOf(nonPayer);
-    const owed = owedAmount(num, splitType, customAmt ?? undefined);
+    const owed = owedAmount(convertedCHF, splitType, customAmt ?? undefined);
     if (owed <= 0) return null;
     if (splitType === "custom" && customAmt !== null) {
-      const payerKeeps = num - customAmt;
-      return `${other} rembourse ${fmtCHF(customAmt)} · ${payer} garde ${fmtCHF(payerKeeps)}`;
+      return `${other} rembourse ${fmtCHF(customAmt)} · ${payer} garde ${fmtCHF(convertedCHF - customAmt)}`;
     }
     return `${other} devra ${fmtCHF(owed)} à ${payer}`;
   }
 
   const preview = previewText();
-
   const canSubmit =
-    description.trim() &&
-    validAmount &&
-    (splitType !== "custom" || (customAmt !== null && customAmt > 0 && customAmt < num));
+    description.trim() && validAmount && convertedCHF !== null && !converting && !conversionError &&
+    (splitType !== "custom" || (customAmt !== null && customAmt > 0 && customAmt < convertedCHF));
 
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end md:items-center justify-center"
       style={{ paddingTop: "env(safe-area-inset-top, 20px)" }}
-      role="dialog"
-      aria-modal="true"
+      role="dialog" aria-modal="true"
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
       <div
         className="relative w-full md:max-w-lg md:rounded-3xl rounded-t-3xl flex flex-col"
         style={{
@@ -170,15 +233,70 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
             />
           </div>
 
-          {/* Montant */}
+          {/* Montant + devise */}
           <div>
-            <label style={labelStyle}>Montant (CHF)</label>
+            <label style={labelStyle}>Montant</label>
+
+            {/* Sélecteur de devise */}
+            <div className="flex gap-2 mt-2 mb-2 overflow-x-auto pb-1 scrollbar-none">
+              {CURRENCIES.map(({ code, flag }) => (
+                <button
+                  key={code} type="button"
+                  onClick={() => setCurrency(code)}
+                  style={{
+                    flexShrink: 0, padding: "5px 10px", borderRadius: "20px",
+                    fontSize: "12px", fontFamily: "var(--font-body)", whiteSpace: "nowrap",
+                    border: `1.5px solid ${currency === code ? "var(--color-forest)" : "var(--color-border)"}`,
+                    background: currency === code ? "var(--color-forest)" : "transparent",
+                    color: currency === code ? "#fff" : "var(--color-ink-soft)",
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: "4px",
+                  }}
+                >
+                  {flag} {code}
+                </button>
+              ))}
+            </div>
+
+            {/* Input montant */}
             <input
               type="number" inputMode="decimal" step="0.01" min="0.01"
               value={amount} onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00" required
-              style={{ ...inputStyle, fontSize: "22px", fontFamily: "var(--font-display)" }}
+              style={{ ...inputStyle, fontSize: "22px", fontFamily: "var(--font-display)", marginTop: 0 }}
             />
+
+            {/* Résultat de la conversion */}
+            {currency !== "CHF" && validAmount && (
+              <div style={{
+                marginTop: "8px", padding: "10px 14px", borderRadius: "10px",
+                background: conversionError ? "rgba(220,38,38,0.06)" : "rgba(44,74,53,0.06)",
+                border: `1px solid ${conversionError ? "rgba(220,38,38,0.2)" : "rgba(44,74,53,0.12)"}`,
+                display: "flex", alignItems: "center", gap: "8px",
+              }}>
+                {converting ? (
+                  <span style={{ fontSize: "13px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
+                    Conversion en cours…
+                  </span>
+                ) : conversionError ? (
+                  <span style={{ fontSize: "13px", color: "#DC2626", fontFamily: "var(--font-body)" }}>
+                    ⚠ Conversion indisponible
+                  </span>
+                ) : convertedCHF !== null ? (
+                  <>
+                    <span style={{ fontSize: "13px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
+                      {amount} {currency}
+                    </span>
+                    <span style={{ fontSize: "13px", color: "var(--color-muted)" }}>→</span>
+                    <span style={{ fontSize: "16px", fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--color-forest)" }}>
+                      {fmtCHF(convertedCHF)}
+                    </span>
+                    <span style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginLeft: "auto" }}>
+                      taux en direct
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            )}
           </div>
 
           {/* Payé par */}
@@ -195,7 +313,7 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
             </div>
           </div>
 
-          {/* Qui participe */}
+          {/* Qui rembourse */}
           <div>
             <label style={{ ...labelStyle, display: "block", marginBottom: "8px" }}>Qui rembourse ?</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
@@ -203,30 +321,23 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
               <CheckPersonButton name={lylouName} checked={lylouChecked} isPayer={paidBy === "lylou"} onChange={handleLylouCheck} />
             </div>
 
-            {/* Option montant custom — uniquement si les deux participent */}
+            {/* Montant custom */}
             {bothChecked && (
               <div style={{ marginTop: "10px" }}>
                 <button
                   type="button"
                   onClick={() => { setUseCustom((v) => !v); setCustomAmount(""); }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    background: "none", border: "none", cursor: "pointer",
-                    padding: "8px 0",
-                  }}
+                  style={{ display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: "8px 0" }}
                 >
-                  {/* Toggle pill */}
                   <div style={{
                     width: "36px", height: "20px", borderRadius: "10px",
                     background: useCustom ? "var(--color-forest)" : "var(--color-border)",
                     position: "relative", transition: "background 0.2s", flexShrink: 0,
                   }}>
                     <div style={{
-                      position: "absolute", top: "2px",
-                      left: useCustom ? "18px" : "2px",
-                      width: "16px", height: "16px", borderRadius: "50%",
-                      background: "#fff", transition: "left 0.2s",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                      position: "absolute", top: "2px", left: useCustom ? "18px" : "2px",
+                      width: "16px", height: "16px", borderRadius: "50%", background: "#fff",
+                      transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                     }} />
                   </div>
                   <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: useCustom ? "var(--color-forest)" : "var(--color-muted)", fontWeight: useCustom ? 500 : 400 }}>
@@ -247,14 +358,14 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
                       autoFocus
                       style={{ ...inputStyle, fontSize: "20px", fontFamily: "var(--font-display)" }}
                     />
-                    {validAmount && customAmt !== null && customAmt > 0 && (
+                    {convertedCHF !== null && customAmt !== null && customAmt > 0 && customAmt < convertedCHF && (
                       <p style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginTop: "6px" }}>
-                        {nameOf(paidBy)} garde {fmtCHF(num - customAmt)} à sa charge
+                        {nameOf(paidBy)} garde {fmtCHF(convertedCHF - customAmt)} à sa charge
                       </p>
                     )}
-                    {validAmount && customAmt !== null && customAmt >= num && (
+                    {convertedCHF !== null && customAmt !== null && customAmt >= convertedCHF && (
                       <p style={{ fontSize: "12px", color: "#DC2626", fontFamily: "var(--font-body)", marginTop: "6px" }}>
-                        Le montant remboursé ne peut pas dépasser le total ({fmtCHF(num)})
+                        Le montant ne peut pas dépasser {fmtCHF(convertedCHF)}
                       </p>
                     )}
                   </div>
@@ -304,10 +415,9 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
               background: "var(--color-forest)", color: "#fff",
               fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 500,
               cursor: !canSubmit ? "not-allowed" : "pointer",
-              opacity: !canSubmit ? 0.5 : 1,
-              transition: "opacity 0.15s",
+              opacity: !canSubmit ? 0.5 : 1, transition: "opacity 0.15s",
             }}>
-            {isEdit ? "Enregistrer les modifications" : "Ajouter la dépense"}
+            {converting ? "Conversion…" : isEdit ? "Enregistrer les modifications" : "Ajouter la dépense"}
           </button>
         </form>
       </div>

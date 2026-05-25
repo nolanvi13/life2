@@ -8,10 +8,12 @@ export type Depense = {
   id: string;
   couple_id: string;
   description: string;
-  amount: number;
+  amount: number;           // toujours en CHF (après conversion)
+  original_amount?: number | null; // montant dans la devise d'origine
+  currency?: string | null; // devise d'origine (ex: "EUR"), null ou "CHF" = pas de conversion
   paid_by: "nolan" | "lylou";
   split_type: SplitType;
-  custom_amount?: number | null; // montant que le non-payeur rembourse (si split_type === "custom")
+  custom_amount?: number | null;
   category: string;
   created_at: string;
 };

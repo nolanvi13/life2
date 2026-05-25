@@ -367,6 +367,11 @@ function DepenseRow({
         <p style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 500, color: isMe ? "var(--color-forest)" : "var(--color-ink)" }}>
           {fmtCHF(depense.amount)}
         </p>
+        {depense.currency && depense.currency !== "CHF" && depense.original_amount && (
+          <p style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
+            {depense.original_amount} {depense.currency}
+          </p>
+        )}
         {depense.split_type !== "none" && (
           <p style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
             {fmtCHF(owedAmount(depense.amount, depense.split_type, depense.custom_amount ?? undefined))} dû
