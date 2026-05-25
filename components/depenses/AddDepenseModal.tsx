@@ -188,7 +188,7 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
 
   const preview = previewText();
   const canSubmit =
-    description.trim() && validAmount && convertedCHF !== null && !converting && !conversionError &&
+    description.trim() && validAmount && convertedCHF !== null && !conversionError &&
     (splitType !== "custom" || (customAmt !== null && customAmt > 0 && customAmt < convertedCHF));
 
   return (
@@ -418,7 +418,7 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
               cursor: !canSubmit ? "not-allowed" : "pointer",
               opacity: !canSubmit ? 0.5 : 1, transition: "opacity 0.15s",
             }}>
-            {converting ? "Conversion…" : isEdit ? "Enregistrer les modifications" : "Ajouter la dépense"}
+            {isEdit ? "Enregistrer les modifications" : "Ajouter la dépense"}
           </button>
         </form>
       </div>
