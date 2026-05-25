@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useApp } from "@/components/providers/AppProvider";
 import { useDepenses } from "@/hooks/useDepenses";
+import { useDepensesArchives } from "@/hooks/useDepensesArchives";
 import { AddDepenseModal } from "./AddDepenseModal";
 import { CATEGORY_EMOJI, fmtCHF, computeBalance, owedAmount, effectiveCost } from "@/lib/depenses";
 import type { Depense } from "@/lib/depenses";
@@ -21,10 +22,12 @@ function formatDate(iso: string) {
 export function DepensesPage() {
   const { coupleId, myOwner, nolanName, lylouName } = useApp();
   const { depenses, loading, addDepense, updateDepense, deleteDepense } = useDepenses(coupleId);
+  const { archivedMonths, archiveMonth } = useDepensesArchives(coupleId);
 
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Depense | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState(false);
 
   const now = new Date();
   const currentYM = toYM(now);
@@ -53,6 +56,7 @@ export function DepensesPage() {
   const totalAll = myTotal + partnerTotal;
 
   const isCurrentMonth = selectedYM === currentYM;
+  const isArchived = archivedMonths.has(selectedYM);
 
   function monthLabel(ym: string) {
     const [y, m] = ym.split("-");
@@ -91,27 +95,40 @@ export function DepensesPage() {
         )}
       </div>
 
-      {/* Month selector */}
-      {availableMonths.length > 1 && (
-        <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-none">
-          {availableMonths.map((ym) => (
+      {/* Month selector — toujours visible */}
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-none">
+        {availableMonths.map((ym) => {
+          const active = selectedYM === ym;
+          const archived = archivedMonths.has(ym);
+          return (
             <button
               key={ym}
               onClick={() => setSelectedYM(ym)}
               style={{
                 flexShrink: 0, padding: "6px 14px", borderRadius: "20px",
                 fontSize: "13px", fontFamily: "var(--font-body)", whiteSpace: "nowrap",
-                border: `1px solid ${selectedYM === ym ? "var(--color-forest)" : "var(--color-border)"}`,
-                background: selectedYM === ym ? "var(--color-forest)" : "transparent",
-                color: selectedYM === ym ? "#fff" : "var(--color-ink-soft)",
+                border: `1px solid ${active ? "var(--color-forest)" : "var(--color-border)"}`,
+                background: active ? "var(--color-forest)" : "transparent",
+                color: active ? "#fff" : "var(--color-ink-soft)",
                 cursor: "pointer", transition: "all 0.15s",
+                display: "flex", alignItems: "center", gap: "5px",
               }}
             >
               {monthLabel(ym)}
+              {archived && (
+                <span style={{
+                  fontSize: "10px",
+                  background: active ? "rgba(255,255,255,0.25)" : "rgba(44,74,53,0.12)",
+                  color: active ? "#fff" : "var(--color-forest)",
+                  borderRadius: "10px", padding: "1px 5px", fontWeight: 600,
+                }}>
+                  ✓
+                </span>
+              )}
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {/* Balance card */}
       <div
@@ -201,6 +218,64 @@ export function DepensesPage() {
           </div>
 
         </>
+      )}
+
+      {/* Archive button */}
+      {isCurrentMonth && filtered.length > 0 && (
+        <div className="mt-8 pt-6" style={{ borderTop: "1px solid var(--color-border)" }}>
+          {isArchived ? (
+            <div className="flex items-center justify-center gap-2 py-3">
+              <span style={{ fontSize: "16px" }}>✅</span>
+              <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--color-forest)", fontWeight: 500 }}>
+                Ce mois est archivé — données conservées
+              </span>
+            </div>
+          ) : confirmArchive ? (
+            <div className="rounded-2xl p-4" style={{ background: "rgba(44,74,53,0.06)", border: "1px solid rgba(44,74,53,0.15)" }}>
+              <p style={{ fontSize: "14px", fontFamily: "var(--font-body)", fontWeight: 500, color: "var(--color-ink)", marginBottom: "4px" }}>
+                Archiver ce mois ?
+              </p>
+              <p style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginBottom: "12px" }}>
+                Les dépenses sont conservées et resteront accessibles dans l'historique. Aucune donnée ne sera supprimée.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => { await archiveMonth(currentYM); setConfirmArchive(false); }}
+                  style={{
+                    flex: 1, padding: "10px", borderRadius: "10px", border: "none",
+                    background: "var(--color-forest)", color: "#fff", fontFamily: "var(--font-body)",
+                    fontSize: "13px", fontWeight: 600, cursor: "pointer",
+                  }}
+                >
+                  Archiver
+                </button>
+                <button
+                  onClick={() => setConfirmArchive(false)}
+                  style={{
+                    flex: 1, padding: "10px", borderRadius: "10px",
+                    border: "1px solid var(--color-border)", background: "transparent",
+                    color: "var(--color-ink)", fontFamily: "var(--font-body)",
+                    fontSize: "13px", cursor: "pointer",
+                  }}
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmArchive(true)}
+              style={{
+                width: "100%", padding: "12px", borderRadius: "12px",
+                border: "1px solid var(--color-border)", background: "transparent",
+                color: "var(--color-muted)", fontFamily: "var(--font-body)",
+                fontSize: "13px", cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              📦 Archiver ce mois
+            </button>
+          )}
+        </div>
       )}
 
       {/* Add modal */}
