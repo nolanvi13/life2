@@ -73,13 +73,14 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
     setConverting(true);
     setConversionError(false);
     try {
+      const from = cur.toLowerCase();
       const res = await fetch(
-        `https://api.frankfurter.app/latest?from=${cur}&to=CHF&amount=${amt}`
+        `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${from}.min.json`
       );
       const data = await res.json();
-      const chf = data?.rates?.CHF;
-      if (typeof chf === "number") {
-        setConvertedCHF(Math.round(chf * 100) / 100);
+      const rate = data?.[from]?.["chf"];
+      if (typeof rate === "number") {
+        setConvertedCHF(Math.round(amt * rate * 100) / 100);
       } else {
         setConversionError(true);
         setConvertedCHF(null);
