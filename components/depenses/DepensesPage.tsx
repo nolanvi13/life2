@@ -356,6 +356,9 @@ function DepenseRow({
           {depense.split_type === "full" && (
             <span style={{ marginLeft: "6px", background: "rgba(220,38,38,0.08)", color: "#DC2626", borderRadius: "6px", padding: "1px 6px", fontSize: "11px" }}>tout</span>
           )}
+          {depense.split_type === "custom" && (
+            <span style={{ marginLeft: "6px", background: "rgba(124,92,252,0.1)", color: "#7C5CFC", borderRadius: "6px", padding: "1px 6px", fontSize: "11px" }}>perso</span>
+          )}
         </p>
       </div>
 
@@ -366,7 +369,7 @@ function DepenseRow({
         </p>
         {depense.split_type !== "none" && (
           <p style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
-            {fmtCHF(owedAmount(depense.amount, depense.split_type))} dû
+            {fmtCHF(owedAmount(depense.amount, depense.split_type, depense.custom_amount ?? undefined))} dû
           </p>
         )}
       </div>

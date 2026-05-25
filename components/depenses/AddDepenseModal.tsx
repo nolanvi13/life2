@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Depense, SplitType } from "@/lib/depenses";
-import { DEPENSE_CATEGORIES, CATEGORY_EMOJI, fmtCHF } from "@/lib/depenses";
+import { DEPENSE_CATEGORIES, CATEGORY_EMOJI, fmtCHF, owedAmount } from "@/lib/depenses";
 import { useApp } from "@/components/providers/AppProvider";
 
 type DepensePayload = Omit<Depense, "id" | "couple_id" | "created_at">;
@@ -13,27 +13,10 @@ interface Props {
   initial?: Depense;
 }
 
-/** Dériver le split_type à partir des cases cochées */
-function checksToSplitType(
-  nolanChecked: boolean,
-  lylouChecked: boolean,
-  paidBy: "nolan" | "lylou"
-): SplitType {
-  if (nolanChecked && lylouChecked) return "half";
-  if (nolanChecked && paidBy !== "nolan") return "full"; // nolan doit rembourser tout
-  if (lylouChecked && paidBy !== "lylou") return "full"; // lylou doit rembourser tout
-  return "none";
-}
-
-/** Initialiser les cases à partir du split_type existant */
 function splitTypeToChecks(splitType: SplitType, paidBy: "nolan" | "lylou") {
-  if (splitType === "half") return { nolanChecked: true, lylouChecked: true };
-  if (splitType === "full") {
-    // l'autre personne (non-payeur) est cochée seule
-    return { nolanChecked: paidBy !== "nolan", lylouChecked: paidBy !== "lylou" };
-  }
-  // none → seulement le payeur
-  return { nolanChecked: paidBy === "nolan", lylouChecked: paidBy === "lylou" };
+  if (splitType === "none") return { nolanChecked: paidBy === "nolan", lylouChecked: paidBy === "lylou" };
+  // half / full / custom → les deux participent
+  return { nolanChecked: true, lylouChecked: true };
 }
 
 export function AddDepenseModal({ onClose, onSave, initial }: Props) {
@@ -49,13 +32,29 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
   const [nolanChecked, setNolanChecked] = useState(initChecks.nolanChecked);
   const [lylouChecked, setLylouChecked] = useState(initChecks.lylouChecked);
 
+  // Montant personnalisé
+  const isInitCustom = initial?.split_type === "custom";
+  const [useCustom, setUseCustom] = useState(isInitCustom);
+  const [customAmount, setCustomAmount] = useState(
+    isInitCustom && initial?.custom_amount ? String(initial.custom_amount) : ""
+  );
+
   const firstRef = useRef<HTMLInputElement>(null);
 
-  // Quand paidBy change, recalculer les cases par défaut (les deux cochés)
   function handlePaidByChange(owner: "nolan" | "lylou") {
     setPaidBy(owner);
     setNolanChecked(true);
     setLylouChecked(true);
+  }
+
+  // Quand on décoche l'un → désactiver custom
+  function handleNolanCheck(v: boolean) {
+    setNolanChecked(v);
+    if (!v) { setUseCustom(false); setCustomAmount(""); }
+  }
+  function handleLylouCheck(v: boolean) {
+    setLylouChecked(v);
+    if (!v) { setUseCustom(false); setCustomAmount(""); }
   }
 
   useEffect(() => {
@@ -69,35 +68,62 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
     };
   }, [onClose]);
 
+  const num = parseFloat(amount.replace(",", "."));
+  const validAmount = !isNaN(num) && num > 0;
+  const bothChecked = nolanChecked && lylouChecked;
+
+  // Calcul du split_type final
+  function getSplitType(): SplitType {
+    if (!nolanChecked && !lylouChecked) return "none";
+    if (nolanChecked && !lylouChecked) return paidBy === "nolan" ? "none" : "full";
+    if (!nolanChecked && lylouChecked) return paidBy === "lylou" ? "none" : "full";
+    // les deux cochés
+    if (useCustom) return "custom";
+    return "half";
+  }
+
+  function getCustomAmount(): number | null {
+    if (!useCustom) return null;
+    const v = parseFloat(customAmount.replace(",", "."));
+    return isNaN(v) ? null : v;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const num = parseFloat(amount.replace(",", "."));
-    if (!description.trim() || isNaN(num) || num <= 0) return;
-    const split_type = checksToSplitType(nolanChecked, lylouChecked, paidBy);
+    if (!description.trim() || !validAmount) return;
+    const split_type = getSplitType();
+    const custom_amount = getCustomAmount();
+    if (split_type === "custom" && (custom_amount === null || custom_amount <= 0 || custom_amount >= num)) return;
     onClose();
-    await onSave({ description: description.trim(), amount: num, paid_by: paidBy, split_type, category });
+    await onSave({ description: description.trim(), amount: num, paid_by: paidBy, split_type, custom_amount, category });
   }
 
   const nameOf = (owner: "nolan" | "lylou") => owner === "nolan" ? nolanName : lylouName;
-  const num = parseFloat(amount.replace(",", "."));
-  const validAmount = !isNaN(num) && num > 0;
-  const splitType = checksToSplitType(nolanChecked, lylouChecked, paidBy);
+  const splitType = getSplitType();
+  const customAmt = getCustomAmount();
+  const nonPayer: "nolan" | "lylou" = paidBy === "nolan" ? "lylou" : "nolan";
 
-  // Preview du remboursement
-  function previewText() {
-    if (!validAmount || splitType === "none") return null;
+  // Preview
+  function previewText(): string | null {
+    if (!validAmount) return null;
+    if (splitType === "none") return null;
     const payer = nameOf(paidBy);
-    const other = nameOf(paidBy === "nolan" ? "lylou" : "nolan");
-    if (splitType === "half") {
-      return `${other} devra ${fmtCHF(num / 2)} à ${payer}`;
+    const other = nameOf(nonPayer);
+    const owed = owedAmount(num, splitType, customAmt ?? undefined);
+    if (owed <= 0) return null;
+    if (splitType === "custom" && customAmt !== null) {
+      const payerKeeps = num - customAmt;
+      return `${other} rembourse ${fmtCHF(customAmt)} · ${payer} garde ${fmtCHF(payerKeeps)}`;
     }
-    // full
-    const debtor = nolanChecked && paidBy !== "nolan" ? nolanName : lylouName;
-    const creditor = nolanChecked && paidBy !== "nolan" ? (paidBy === "lylou" ? lylouName : nolanName) : (paidBy === "nolan" ? nolanName : lylouName);
-    return `${debtor} devra ${fmtCHF(num)} à ${creditor}`;
+    return `${other} devra ${fmtCHF(owed)} à ${payer}`;
   }
 
   const preview = previewText();
+
+  const canSubmit =
+    description.trim() &&
+    validAmount &&
+    (splitType !== "custom" || (customAmt !== null && customAmt > 0 && customAmt < num));
 
   return (
     <div
@@ -144,7 +170,7 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
             />
           </div>
 
-          {/* Amount */}
+          {/* Montant */}
           <div>
             <label style={labelStyle}>Montant (CHF)</label>
             <input
@@ -169,36 +195,81 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
             </div>
           </div>
 
-          {/* Qui participe — cases à cocher avec prénoms */}
+          {/* Qui participe */}
           <div>
-            <label style={{ ...labelStyle, display: "block", marginBottom: "8px" }}>Qui participe ?</label>
+            <label style={{ ...labelStyle, display: "block", marginBottom: "8px" }}>Qui rembourse ?</label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-              <CheckPersonButton
-                name={nolanName}
-                checked={nolanChecked}
-                isPayer={paidBy === "nolan"}
-                onChange={setNolanChecked}
-              />
-              <CheckPersonButton
-                name={lylouName}
-                checked={lylouChecked}
-                isPayer={paidBy === "lylou"}
-                onChange={setLylouChecked}
-              />
+              <CheckPersonButton name={nolanName} checked={nolanChecked} isPayer={paidBy === "nolan"} onChange={handleNolanCheck} />
+              <CheckPersonButton name={lylouName} checked={lylouChecked} isPayer={paidBy === "lylou"} onChange={handleLylouCheck} />
             </div>
 
+            {/* Option montant custom — uniquement si les deux participent */}
+            {bothChecked && (
+              <div style={{ marginTop: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => { setUseCustom((v) => !v); setCustomAmount(""); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    background: "none", border: "none", cursor: "pointer",
+                    padding: "8px 0",
+                  }}
+                >
+                  {/* Toggle pill */}
+                  <div style={{
+                    width: "36px", height: "20px", borderRadius: "10px",
+                    background: useCustom ? "var(--color-forest)" : "var(--color-border)",
+                    position: "relative", transition: "background 0.2s", flexShrink: 0,
+                  }}>
+                    <div style={{
+                      position: "absolute", top: "2px",
+                      left: useCustom ? "18px" : "2px",
+                      width: "16px", height: "16px", borderRadius: "50%",
+                      background: "#fff", transition: "left 0.2s",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                    }} />
+                  </div>
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: useCustom ? "var(--color-forest)" : "var(--color-muted)", fontWeight: useCustom ? 500 : 400 }}>
+                    Montant personnalisé
+                  </span>
+                </button>
+
+                {useCustom && (
+                  <div style={{ marginTop: "4px" }}>
+                    <label style={{ ...labelStyle, display: "block", marginBottom: "6px" }}>
+                      Montant remboursé par {nameOf(nonPayer)} (CHF)
+                    </label>
+                    <input
+                      type="number" inputMode="decimal" step="0.01" min="0.01"
+                      value={customAmount}
+                      onChange={(e) => setCustomAmount(e.target.value)}
+                      placeholder="0.00"
+                      autoFocus
+                      style={{ ...inputStyle, fontSize: "20px", fontFamily: "var(--font-display)" }}
+                    />
+                    {validAmount && customAmt !== null && customAmt > 0 && (
+                      <p style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginTop: "6px" }}>
+                        {nameOf(paidBy)} garde {fmtCHF(num - customAmt)} à sa charge
+                      </p>
+                    )}
+                    {validAmount && customAmt !== null && customAmt >= num && (
+                      <p style={{ fontSize: "12px", color: "#DC2626", fontFamily: "var(--font-body)", marginTop: "6px" }}>
+                        Le montant remboursé ne peut pas dépasser le total ({fmtCHF(num)})
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Preview */}
-            {preview && (
-              <div
-                className="mt-3 rounded-xl px-4 py-3"
-                style={{ background: "rgba(44,74,53,0.06)", border: "1px solid rgba(44,74,53,0.12)" }}
-              >
+            {preview ? (
+              <div className="mt-3 rounded-xl px-4 py-3" style={{ background: "rgba(44,74,53,0.06)", border: "1px solid rgba(44,74,53,0.12)" }}>
                 <p style={{ fontSize: "13px", color: "var(--color-forest)", fontFamily: "var(--font-body)", fontWeight: 500, textAlign: "center" }}>
                   → {preview}
                 </p>
               </div>
-            )}
-            {splitType === "none" && (
+            ) : splitType === "none" && (
               <p style={{ fontSize: "12px", color: "var(--color-muted)", fontFamily: "var(--font-body)", textAlign: "center", marginTop: "8px" }}>
                 Aucun remboursement
               </p>
@@ -227,13 +298,13 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
           {/* Submit */}
           <button
             type="submit"
-            disabled={!description.trim() || !amount}
+            disabled={!canSubmit}
             style={{
               width: "100%", padding: "15px", borderRadius: "14px", border: "none",
               background: "var(--color-forest)", color: "#fff",
               fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 500,
-              cursor: !description.trim() || !amount ? "not-allowed" : "pointer",
-              opacity: !description.trim() || !amount ? 0.5 : 1,
+              cursor: !canSubmit ? "not-allowed" : "pointer",
+              opacity: !canSubmit ? 0.5 : 1,
               transition: "opacity 0.15s",
             }}>
             {isEdit ? "Enregistrer les modifications" : "Ajouter la dépense"}
@@ -244,37 +315,25 @@ export function AddDepenseModal({ onClose, onSave, initial }: Props) {
   );
 }
 
-function CheckPersonButton({
-  name, checked, isPayer, onChange,
-}: {
-  name: string;
-  checked: boolean;
-  isPayer: boolean;
-  onChange: (v: boolean) => void;
+function CheckPersonButton({ name, checked, isPayer, onChange }: {
+  name: string; checked: boolean; isPayer: boolean; onChange: (v: boolean) => void;
 }) {
   return (
     <button
       type="button"
       onClick={() => onChange(!checked)}
       style={{
-        padding: "14px 12px",
-        borderRadius: "12px",
-        cursor: "pointer",
-        transition: "all 0.15s",
+        padding: "14px 12px", borderRadius: "12px", cursor: "pointer", transition: "all 0.15s",
         border: `2px solid ${checked ? "var(--color-forest)" : "var(--color-border)"}`,
         background: checked ? "rgba(44,74,53,0.06)" : "var(--surface-2)",
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
+        display: "flex", alignItems: "center", gap: "10px",
       }}
     >
-      {/* Checkbox visuel */}
       <div style={{
         width: "20px", height: "20px", borderRadius: "6px", flexShrink: 0,
         border: `2px solid ${checked ? "var(--color-forest)" : "var(--color-border)"}`,
         background: checked ? "var(--color-forest)" : "transparent",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "all 0.15s",
+        display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s",
       }}>
         {checked && (
           <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
@@ -286,9 +345,7 @@ function CheckPersonButton({
         <p style={{ fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: checked ? 600 : 400, color: checked ? "var(--color-forest)" : "var(--color-ink-soft)" }}>
           {name}
         </p>
-        {isPayer && (
-          <p style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginTop: "1px" }}>a payé</p>
-        )}
+        {isPayer && <p style={{ fontSize: "11px", color: "var(--color-muted)", fontFamily: "var(--font-body)", marginTop: "1px" }}>a payé</p>}
       </div>
     </button>
   );

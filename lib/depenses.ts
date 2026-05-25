@@ -1,5 +1,8 @@
-export type SplitType = "half" | "full" | "none";
-// half → 50/50 | full → other person reimburses everything | none → payer only
+export type SplitType = "half" | "full" | "none" | "custom";
+// half   → 50/50
+// full   → non-payer rembourse tout
+// none   → payeur seul, pas de remboursement
+// custom → montant personnalisé (stocké dans custom_amount)
 
 export type Depense = {
   id: string;
@@ -8,6 +11,7 @@ export type Depense = {
   amount: number;
   paid_by: "nolan" | "lylou";
   split_type: SplitType;
+  custom_amount?: number | null; // montant que le non-payeur rembourse (si split_type === "custom")
   category: string;
   created_at: string;
 };
@@ -45,49 +49,43 @@ export function fmtCHF(n: number) {
   }).format(n);
 }
 
-/** Amount owed by non-payer given a split type */
-export function owedAmount(amount: number, splitType: SplitType): number {
+/** Montant dû par le non-payeur */
+export function owedAmount(amount: number, splitType: SplitType, customAmount?: number | null): number {
   if (splitType === "half") return amount / 2;
   if (splitType === "full") return amount;
+  if (splitType === "custom") return customAmount ?? 0;
   return 0;
 }
 
-/**
- * Effective cost for a given person — what they actually bear after splits.
- * e.g. Lylou pays 50 split half → Lylou effective = 25, Nolan effective = 25
- *      Lylou pays 7.5 full reimburse by Nolan → Lylou effective = 0, Nolan effective = 7.5
- */
+/** Coût effectif réel supporté par chaque personne après split */
 export function effectiveCost(depenses: Depense[], person: "nolan" | "lylou"): number {
   let total = 0;
   for (const d of depenses) {
+    const owed = owedAmount(d.amount, d.split_type, d.custom_amount);
     const isPayer = d.paid_by === person;
     if (isPayer) {
-      if (d.split_type === "none") total += d.amount;        // covers all
-      else if (d.split_type === "half") total += d.amount / 2; // covers half
-      else if (d.split_type === "full") total += 0;           // other reimburses all
+      total += d.amount - owed; // ce que le payeur garde à sa charge
     } else {
-      if (d.split_type === "none") total += 0;               // payer covers all
-      else if (d.split_type === "half") total += d.amount / 2; // owes half
-      else if (d.split_type === "full") total += d.amount;    // owes all
+      total += owed; // ce que le non-payeur rembourse
     }
   }
   return total;
 }
 
 /**
- * Compute balance from the perspective of `myOwner`.
- * Positive → I owe my partner. Negative → partner owes me.
+ * Balance du point de vue de `myOwner`.
+ * Positif → je dois à mon/ma partenaire. Négatif → il/elle me doit.
  */
 export function computeBalance(depenses: Depense[], myOwner: "nolan" | "lylou"): number {
   const partnerOwner = myOwner === "nolan" ? "lylou" : "nolan";
   let balance = 0;
   for (const d of depenses) {
-    const owed = owedAmount(d.amount, d.split_type);
+    const owed = owedAmount(d.amount, d.split_type, d.custom_amount);
     if (owed === 0) continue;
     if (d.paid_by === partnerOwner) {
-      balance += owed; // partner paid → I owe
+      balance += owed;
     } else {
-      balance -= owed; // I paid → partner owes me
+      balance -= owed;
     }
   }
   return balance;
