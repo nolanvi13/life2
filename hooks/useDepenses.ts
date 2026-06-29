@@ -62,5 +62,15 @@ export function useDepenses(coupleId: string) {
     else load();
   }
 
-  return { depenses, loading, addDepense, updateDepense, deleteDepense, deleteAll };
+  async function markSettled(ids: string[]) {
+    if (ids.length === 0) return;
+    const { error } = await supabase
+      .from("depenses")
+      .update({ settled_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) console.error("markSettled error:", error);
+    else load();
+  }
+
+  return { depenses, loading, addDepense, updateDepense, deleteDepense, deleteAll, markSettled };
 }

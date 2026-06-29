@@ -16,6 +16,7 @@ export type Depense = {
   custom_amount?: number | null;
   category: string;
   created_at: string;
+  settled_at?: string | null; // null = pas encore réglé via Twint
 };
 
 export const DEPENSE_CATEGORIES = [

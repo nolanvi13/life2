@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Evenement } from "./useCalendrier";
+import { computeBalance, type Depense } from "@/lib/depenses";
 
 type BudgetEntry = { owner: string; category: string; label: string; amount: number };
 
@@ -35,9 +36,6 @@ export function useDashboardData(coupleId: string, myOwner: "nolan" | "lylou" = 
 
     async function load() {
       const today = new Date().toISOString().split("T")[0];
-      const now = new Date();
-      const thisYear = now.getFullYear();
-      const thisMonth = now.getMonth();
 
       const [budgetRes, eventRes, depensesRes] = await Promise.all([
         supabase
@@ -52,11 +50,12 @@ export function useDashboardData(coupleId: string, myOwner: "nolan" | "lylou" = 
           .order("date", { ascending: true })
           .limit(1)
           .single(),
-        // Fetch all depenses — filter by month in JS to avoid timestamptz comparison issues
+        // Dépenses non réglées uniquement — indépendant du mois calendaire
         supabase
           .from("depenses")
-          .select("amount, paid_by, split_type, created_at")
-          .eq("couple_id", coupleId),
+          .select("amount, paid_by, split_type, custom_amount, created_at")
+          .eq("couple_id", coupleId)
+          .is("settled_at", null),
       ]);
 
       if (cancelled) return;
@@ -72,24 +71,10 @@ export function useDashboardData(coupleId: string, myOwner: "nolan" | "lylou" = 
         else { totalCommun += e.amount; totalDepenses += e.amount; }
       }
 
-      // Depenses — filter current month in JS
-      const allDepenses = depensesRes.data ?? [];
-      const thisMonthDepenses = allDepenses.filter((d: { created_at: string }) => {
-        const date = new Date(d.created_at);
-        return date.getFullYear() === thisYear && date.getMonth() === thisMonth;
-      });
-
-      const partnerOwner = myOwner === "nolan" ? "lylou" : "nolan";
-      let balance = 0;
-      let totalAll = 0;
-      for (const d of thisMonthDepenses) {
-        totalAll += d.amount;
-        const splitType = d.split_type ?? "half";
-        const owed = splitType === "half" ? d.amount / 2 : splitType === "full" ? d.amount : 0;
-        if (owed === 0) continue;
-        if (d.paid_by === partnerOwner) balance += owed;
-        else balance -= owed;
-      }
+      // Dépenses non réglées
+      const unsettled = (depensesRes.data ?? []) as Depense[];
+      const balance = computeBalance(unsettled, myOwner);
+      const totalAll = unsettled.reduce((s, d) => s + d.amount, 0);
 
       setBudget({ totalDepenses, totalRevenus, totalCommun });
       setDepensesSummary({ balance, totalAll });
