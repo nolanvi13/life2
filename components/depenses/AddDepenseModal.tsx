@@ -35,6 +35,7 @@ const CURRENCIES = [
 
 function splitTypeToChecks(splitType: SplitType, paidBy: "nolan" | "lylou") {
   if (splitType === "none") return { nolanChecked: paidBy === "nolan", lylouChecked: paidBy === "lylou" };
+  if (splitType === "full") return { nolanChecked: paidBy === "lylou", lylouChecked: paidBy === "nolan" };
   return { nolanChecked: true, lylouChecked: true };
 }
 
